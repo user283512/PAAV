@@ -4,12 +4,14 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/cloud_viewer.h>
 
-namespace fs = std::filesystem;
+namespace fs            = std::filesystem; 
 using stringstream      = std::stringstream;
 using CloudViewer       = pcl::visualization::CloudViewer;
 using PCLVisualizer     = pcl::visualization::PCLVisualizer;
 using PointCloud_XYZ    = pcl::PointCloud<pcl::PointXYZ>;
 
+static const fs::path res_path = fs::current_path().parent_path().parent_path() / "res";
+static const fs::path pcd_file_path = res_path / "table_scene_lms400_downsampled.pcd"; // "1639663212.029186000.pcd"
 static int user_data = 0;
     
 void viewerPsycho(PCLVisualizer& viewer)
@@ -24,12 +26,11 @@ void viewerPsycho(PCLVisualizer& viewer)
     user_data++;
 }
     
-
-int main(int argc, char **argv)
+int main()
 {
     PointCloud_XYZ::Ptr cloud (new PointCloud_XYZ);
     
-    bool load = pcl::io::loadPCDFile(argv[1], *cloud);
+    bool load = pcl::io::loadPCDFile(pcd_file_path.string(), *cloud);
     if (load == -1) 
     {
         PCL_ERROR("Errore nel caricamento del file PCD \n");
