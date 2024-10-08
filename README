@@ -1,6 +1,6 @@
 # PCL
 [X] 0_pcl_reader
-[ ] 1_voxel_filtering
+[X] 1_voxel_filtering
 [ ] 2_segmentation_plane
 [ ] 3_euclidean_clustering
 
