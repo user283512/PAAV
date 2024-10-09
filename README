@@ -16,7 +16,7 @@
   This is useful for subsequent analysis steps, such as object recognition, 
   registration (alignment) of scenes or feature extraction.
 
-[ ] Euclidean Cluster Extraction:
+[X] Euclidean Cluster Extraction:
   Euclidean Cluster Extraction is a technique used in point cloud processing, 
   specifically in the Point Cloud Library, to identify and separate distinct objects 
   based on the spatial proximity of points in the cloud. 
