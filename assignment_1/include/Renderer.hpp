@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <string>
+#include <string_view>
 #include <cstdint>
 
 #include <Eigen/Dense>                          // Eigen::Vector3f
@@ -54,15 +55,15 @@ namespace lidar_obstacle_detection
     void addCircle(float centroid_x, float centroid_y, int id);
     void ClearRays();
     void ClearViewer();
-    void addText(float centroid_x, float centroid_y, float centroid_z, const std::string& id);
+    void addText(float centroid_x, float centroid_y, float centroid_z, std::string_view id);
     void RenderPointCloud(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
-      const std::string& name,
+      std::string_view name,
       const Color& color = Color(1.f, 1.f, 1.f)
     );
     void RenderPointCloud(
       const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud,
-      const std::string& name,
+      std::string_view name,
       const Color& color = Color(-1.f, -1.f, -1.f)
     );
     void RenderBox(const Box& box, int id, const Color& color = Color(1.f, 0.f, 0.f), float opacity = 1.0f);

@@ -18,8 +18,9 @@
 #include "../include/tree_utilities.hpp"
 
 #define USE_PCL_LIBRARY
-using namespace lidar_obstacle_detection;
 
+namespace fs = std::filesystem;
+using namespace lidar_obstacle_detection;
 using my_visited_set_t = std::unordered_set<int>;
 
 /**
@@ -94,16 +95,17 @@ std::vector<pcl::PointIndices> euclideanCluster(
 	int setMaxClusterSize
 )
 {
-	my_visited_set_t visited{};                                                          // already visited points
-	std::vector<pcl::PointIndices> clusters;                                             // vector of PointIndices that will contain all the clusters
-	std::vector<int> cluster;                                                            // vector of int that is used to store the points that the function proximity will give me back
+	my_visited_set_t visited{};         // already visited points
+	std::vector<pcl::PointIndices> clusters; // vector of pcl::PointIndices that will contain all the clusters
+	std::vector<int> cluster;           // vector of int that is used to store the points that the function proximity will give me back
 
 	//for every point of the cloud
 	//  if the point has not been visited (use the function called "find")
 	//    find clusters using the proximity function
 	//
 	//    if we have more clusters than the minimum
-	//      Create the cluster and insert it in the vector of clusters. You can extract the indices from the cluster returned by the proximity funciton (use pcl::PointIndices)   
+	//      Create the cluster and insert it in the vector of clusters. 
+	//			You can extract the indices from the cluster returned by the proximity funciton (use pcl::pcl::PointIndices)   
 	//    end if
 	//  end if
 	//end for
@@ -114,7 +116,9 @@ void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXY
 {
 	/* TODO: 1) Downsample the dataset */ 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ>());
+
+
 
 	/* 2) here we crop the points that are far away from us, in which we are not interested */ 
 	pcl::CropBox<pcl::PointXYZ> cb(true);
@@ -127,7 +131,7 @@ void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXY
 
 	/* TODO: 4) iterate over the filtered cloud, segment and remove the planar inliers */ 
 
-	/* TODO: 5) Create the KDTree and the vector of PointIndices */ 
+	/* TODO: 5) Create the KDTree and the vector of pcl::PointIndices */ 
 
 	/* TODO: 6) Set the spatial tolerance for new cluster candidates (pay attention to the tolerance!!!) */ 
 	std::vector<pcl::PointIndices> cluster_indices;
@@ -147,7 +151,7 @@ void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXY
 
 	/**
 	 * Now we extracted the clusters out of our point cloud and saved the indices in cluster_indices. 
-	 * To separate each cluster out of the vector<PointIndices> we have to iterate through cluster_indices, 
+	 * To separate each cluster out of the vector<pcl::PointIndices> we have to iterate through cluster_indices, 
 	 * create a new PointCloud for each entry and write all points of the current cluster in the PointCloud.
 	 * Compute euclidean distance
 	 */
@@ -191,9 +195,7 @@ void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXY
 
 int main()
 {
-	namespace fs = std::filesystem;
-
-	static const fs::path dataset_dir = fs::current_path().parent_path() / "res/dataset_1";
+	static const auto dataset_dir = fs::current_path().parent_path() / "res/dataset_1";
 
 	Renderer renderer;
 	renderer.InitCamera(CameraAngle::XY);
@@ -219,7 +221,7 @@ int main()
 
 		ProcessAndRenderPointCloud(renderer, input_cloud);
 		auto endTime = std::chrono::steady_clock::now();
-		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+		std::chrono::duration<float> elapsedTime = endTime - startTime;
 		std::cout << "[PointCloudProcessor<PointT>::ReadPcdFile] Loaded "
 			<< input_cloud->points.size() << " data points from " 
 			<< streamIterator->string() <<  "plane segmentation took " 
