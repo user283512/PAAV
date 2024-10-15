@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
-project(voxel_filtering)
+project(cluster_extraction)
 
 find_package(PCL 1.14 REQUIRED)
 
@@ -12,5 +12,9 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (voxel_filtering voxel_filtering.cpp)
-target_link_libraries (voxel_filtering ${PCL_LIBRARIES})
+add_executable (cluster_extraction 
+  src/cluster_extraction.cpp 
+  src/Renderer.cpp 
+  src/tree_utilities.cpp
+)
+target_link_libraries (cluster_extraction ${PCL_LIBRARIES})

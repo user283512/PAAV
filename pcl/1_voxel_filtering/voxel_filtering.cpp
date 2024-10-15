@@ -23,7 +23,7 @@ int main ()
    // Fill in the cloud data
    PCDReader reader;
    // Replace the path below with the path where you saved your file
-   reader.read (pcd_file_path.string(), *cloud); // Remember to download the file first!
+   reader.read(pcd_file_path.string(), *cloud); // Remember to download the file first!
 
    std::cout << "PointCloud before filtering: " << cloud->width * cloud->height 
       << " data points (" << pcl::getFieldsList(*cloud) << ").\n";

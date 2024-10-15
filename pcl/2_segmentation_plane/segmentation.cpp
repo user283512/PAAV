@@ -25,6 +25,7 @@ using PCDWriter             = pcl::PCDWriter;
 
 static const fs::path res_path = fs::current_path().parent_path().parent_path() / "res";
 static const fs::path pcd_file_path = res_path / "table_scene_lms400_downsampled.pcd"; // "1639663212.029186000.pcd"
+
 /*
 	Objective: Segment the ground from the input cloud. 
 	Input: point cloud
