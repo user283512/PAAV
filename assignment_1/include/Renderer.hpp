@@ -24,7 +24,7 @@ namespace lidar_obstacle_detection
   {
     float r, g, b;
     Color(float r, float g, float b)
-        : r{ r }, g{ g }, b{ b }
+      : r{ r }, g{ g }, b{ b }
     {}
   };
 

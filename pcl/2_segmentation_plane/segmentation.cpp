@@ -30,8 +30,8 @@ static const fs::path pcd_file_path = res_path / "table_scene_lms400_downsampled
 	Objective: Segment the ground from the input cloud. 
 	Input: point cloud
 	Output: 
-			1) point cloud/s representing the ground
-			2) point cloud without the ground
+        1) point cloud/s representing the ground
+        2) point cloud without the ground
 
 */
 
@@ -107,8 +107,8 @@ int main ()
         writer.write<Point_XYZ>(out, *cloud_segmented, false);
 
         // Here we will extract the plane from the original filtered point cloud
-        extract.setNegative(true); // original cloud - plane 
-        extract.filter(*cloud_aux);  // We write into cloud_f the cloud without the extracted plane
+        extract.setNegative(true);      // original cloud - plane 
+        extract.filter(*cloud_aux);     // We write into cloud_f the cloud without the extracted plane
         
         cloud_filtered.swap(cloud_aux); // Here we swap the cloud (the removed plane one) with the original
         i++;

@@ -33,8 +33,8 @@ int main()
     bool load = pcl::io::loadPCDFile(pcd_file_path.string(), *cloud);
     if (load == -1) 
     {
-        PCL_ERROR("Errore nel caricamento del file PCD \n");
-        return -1;
+			PCL_ERROR("Errore nel caricamento del file PCD \n");
+			return -1;
     }
     
     CloudViewer viewer("Cloud Viewer");
