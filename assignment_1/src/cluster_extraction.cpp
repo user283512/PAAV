@@ -11,9 +11,11 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/common.h>
+#include <pcl/search/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
 #include "../include/Renderer.hpp"
@@ -132,24 +134,24 @@ static void ProcessAndRenderPointCloud(
 	 */
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
 	
-	std::cout << "Before filtering: " << input_cloud->width * input_cloud->height << " points\n";
-	
+	std::cout << "1) Before filtering: " << input_cloud->width * input_cloud->height << " points\n";
 	constexpr float downscaling = 0.1f;
 	pcl::VoxelGrid<pcl::PointXYZ> voxel_filtering;
 	voxel_filtering.setInputCloud(input_cloud);
 	voxel_filtering.setLeafSize(downscaling, downscaling, downscaling);
 	voxel_filtering.filter(*cloud_filtered);
-
-	std::cout << "After filtering: " << cloud_filtered->width * cloud_filtered->height << " points\n";
+	std::cout << "1) After filtering: " << cloud_filtered->width * cloud_filtered->height << " points\n";
 
 	/**
 	 * 2) here we crop the points that are far away from us, in which we are not interested
 	 */
+	std::cout << "2) Before cropping: " << cloud_filtered->width * cloud_filtered->height << " points\n";
 	pcl::CropBox<pcl::PointXYZ> cb(true);
 	cb.setInputCloud(cloud_filtered);
 	cb.setMin(Eigen::Vector4f(-20.f, -6.f, -2.f, 1.f));
 	cb.setMax(Eigen::Vector4f( 30.f, 7.f, 5.f, 1.f));
-	cb.filter(*cloud_filtered); 
+	cb.filter(*cloud_filtered);
+	std::cout << "2) After cropping: " << cloud_filtered->width * cloud_filtered->height << " points\n";
 
 	/**
 	 * 3) Segmentation and apply RANSAC
@@ -192,22 +194,20 @@ static void ProcessAndRenderPointCloud(
 	 * (those that belong to the plane) and repeat until there are no more significant planes to segment.
 	 */
 
-	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
-
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	seg.setOptimizeCoefficients(true);
-	seg.setModelType(pcl::SACMODEL_PLANE);
-	seg.setMethodType(pcl::SAC_RANSAC);
-	seg.setDistanceThreshold(0.1f);
-
-	pcl::ExtractIndices<pcl::PointXYZ> extract;
-	
 	// segment the plans until more than 30 percent of the points remain in the original point cloud
+	std::cout << "3-4) Segmentation of the plane\n";
 	int nr_points = cloud_filtered->size();
 	while (cloud_filtered->size() > 0.3f * nr_points)
 	{
+		pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+		pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
+
+		pcl::SACSegmentation<pcl::PointXYZ> seg;
+		seg.setOptimizeCoefficients(true);
+		seg.setModelType(pcl::SACMODEL_PLANE);
+		seg.setMethodType(pcl::SAC_RANSAC);
+		seg.setDistanceThreshold(0.1f);
 		seg.setInputCloud(cloud_filtered);
     seg.segment(*inliers, *coefficients);
 		if (inliers->indices.size() == 0)
@@ -217,6 +217,7 @@ static void ProcessAndRenderPointCloud(
 		}
 
 		// Pulling out the plan inliers
+		pcl::ExtractIndices<pcl::PointXYZ> extract;
     extract.setInputCloud(cloud_filtered);
     extract.setIndices(inliers);
     extract.setNegative(false); // setNegative(false) to extract only the points in the plane
@@ -230,11 +231,29 @@ static void ProcessAndRenderPointCloud(
     extract.setNegative(true);				
     extract.filter(*cloud_filtered); 	// We write into cloud_filtered the cloud without the extracted plane
 	}
+	return;
+
+	/**
+	 * 5) Create the KDTree and the vector of pcl::PointIndices
+	 */
+	// Creating the KdTree object for the search method of the extraction
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
+	kdtree->setInputCloud(cloud_filtered); 
+	// Vector to contain clusters (each represented by a pcl::PointIndices object)
+	std::vector<pcl::PointIndices> cluster_indices;
+
+	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+	ec.setClusterTolerance(0.02f); 		// Maximum distance between points in a cluster (2cm)
+	ec.setMinClusterSize(100);				// Minimum cluster size
+	ec.setMaxClusterSize(25000); 			// Maximum cluster size
+	ec.setSearchMethod(kdtree);				// Set the search method (KDTree)
+	ec.setInputCloud(cloud_filtered);	// Set the remaining point cloud as input
+	ec.extract(cluster_indices);			// Extract the clusters and save the results in cluster_indices
+
+	// Stampa i risultati
+	std::cout << "Numero di cluster trovati: " << cluster_indices.size() << std::endl;
 
 
-
-
-	/* TODO: 5) Create the KDTree and the vector of pcl::PointIndices */ 
 
 	/* TODO: 6) Set the spatial tolerance for new cluster candidates (pay attention to the tolerance!!!) */ 
 	//std::vector<pcl::PointIndices> cluster_indices;
