@@ -124,34 +124,28 @@ static std::vector<pcl::PointIndices> euclideanCluster(
 	return clusters;	
 }
 
-static void ProcessAndRenderPointCloud(
-	Renderer& renderer, 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr& input_cloud
-)
+static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& input_cloud)
 {
 	/**
 	 * 1) Downsample the dataset
 	 */
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-	
-	std::cout << "1) Before filtering: " << input_cloud->width * input_cloud->height << " points\n";
 	constexpr float downscaling = 0.1f;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::VoxelGrid<pcl::PointXYZ> voxel_filtering;
 	voxel_filtering.setInputCloud(input_cloud);
 	voxel_filtering.setLeafSize(downscaling, downscaling, downscaling);
 	voxel_filtering.filter(*cloud_filtered);
-	std::cout << "1) After filtering: " << cloud_filtered->width * cloud_filtered->height << " points\n";
+	PCL_INFO("1)After filtering: %d points\n", cloud_filtered->size());
 
 	/**
 	 * 2) here we crop the points that are far away from us, in which we are not interested
 	 */
-	std::cout << "2) Before cropping: " << cloud_filtered->width * cloud_filtered->height << " points\n";
 	pcl::CropBox<pcl::PointXYZ> cb(true);
 	cb.setInputCloud(cloud_filtered);
 	cb.setMin(Eigen::Vector4f(-20.f, -6.f, -2.f, 1.f));
 	cb.setMax(Eigen::Vector4f( 30.f, 7.f, 5.f, 1.f));
 	cb.filter(*cloud_filtered);
-	std::cout << "2) After cropping: " << cloud_filtered->width * cloud_filtered->height << " points\n";
+	PCL_INFO("2)After cropping: %d points\n", cloud_filtered->size());
 
 	/**
 	 * 3) Segmentation and apply RANSAC
@@ -193,127 +187,143 @@ static void ProcessAndRenderPointCloud(
 	 * 4) Iterate on the point cloud, segment the main plane each time, remove inliers 
 	 * (those that belong to the plane) and repeat until there are no more significant planes to segment.
 	 */
+	PCL_INFO("3-4) Segmentation with RANSAC method...\n");
+	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
 
-	// segment the plans until more than 30 percent of the points remain in the original point cloud
-	std::cout << "3-4) Segmentation of the plane\n";
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	seg.setOptimizeCoefficients(true);
+	seg.setModelType(pcl::SACMODEL_PLANE);
+	seg.setMethodType(pcl::SAC_RANSAC);
+	seg.setDistanceThreshold(0.1f);
+
+	int nr_segmentations = 0;
 	int nr_points = cloud_filtered->size();
+	// segment the plans until more than 30 percent of the points remain in the original point cloud
 	while (cloud_filtered->size() > 0.3f * nr_points)
 	{
-		pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-		pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
-
-		pcl::SACSegmentation<pcl::PointXYZ> seg;
-		seg.setOptimizeCoefficients(true);
-		seg.setModelType(pcl::SACMODEL_PLANE);
-		seg.setMethodType(pcl::SAC_RANSAC);
-		seg.setDistanceThreshold(0.1f);
 		seg.setInputCloud(cloud_filtered);
     seg.segment(*inliers, *coefficients);
-		if (inliers->indices.size() == 0)
+		if (inliers->indices.empty())
 		{
-			std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
+			PCL_ERROR("Could not estimate a planar model for the given dataset\n");
 			break;
 		}
 
 		// Pulling out the plan inliers
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
-    extract.setInputCloud(cloud_filtered);
-    extract.setIndices(inliers);
-    extract.setNegative(false); // setNegative(false) to extract only the points in the plane
-    extract.filter(*cloud_plane);
-		
-		std::cout << "PointCloud representing the planar component: " 
-			<< cloud_plane->width * cloud_plane->height << " points\n";
+		extract.setInputCloud(cloud_filtered);
+		extract.setIndices(inliers);
+		extract.setNegative(false);
+		extract.filter(*cloud_plane);
+		PCL_INFO("Cloud plane has %d points\n", cloud_plane->size());
 
-		// setNegative(true) to remove those points from the original cloud, 
-		// leaving all other points that do not belong to the plane
-    extract.setNegative(true);				
-    extract.filter(*cloud_filtered); 	// We write into cloud_filtered the cloud without the extracted plane
+		// Remove points that belong to the plane from the original cloud
+    extract.setNegative(true);  // Remove inliers from the filtered cloud
+    extract.filter(*cloud_filtered);
+
+		nr_segmentations++;
 	}
-	return;
+	
+	PCL_INFO("Total number of segmentations: %d\n", nr_segmentations);
 
 	/**
-	 * 5) Create the KDTree and the vector of pcl::PointIndices
+	 * 5-6) Create the KDTree and the vector of pcl::PointIndices and 
+	 * set the spatial tolerance for new cluster candidates
 	 */
-	// Creating the KdTree object for the search method of the extraction
+
+	// #ifdef USE_PCL_LIBRARY
+	// ...
+	// #else
+	// 		// Optional assignment
+	// 		my_pcl::KdTree treeM;
+	// 		treeM.set_dimension(3);
+	// 		setupKdtree(cloud_filtered, &treeM, 3);
+	// 		cluster_indices = euclideanCluster(cloud_filtered, &treeM, clusterTolerance, setMinClusterSize, setMaxClusterSize);
+	// #endif
+
+	PCL_INFO("5-6)Perform clustering using the KDTree...\n");
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
-	kdtree->setInputCloud(cloud_filtered); 
-	// Vector to contain clusters (each represented by a pcl::PointIndices object)
+	kdtree->setInputCloud(cloud_filtered);
+	if (kdtree->getInputCloud()->empty())
+	{
+		PCL_ERROR("KDTree input cloud is empty\n");
+		return;
+	}
+
 	std::vector<pcl::PointIndices> cluster_indices;
-
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance(0.02f); 		// Maximum distance between points in a cluster (2cm)
-	ec.setMinClusterSize(100);				// Minimum cluster size
-	ec.setMaxClusterSize(25000); 			// Maximum cluster size
-	ec.setSearchMethod(kdtree);				// Set the search method (KDTree)
-	ec.setInputCloud(cloud_filtered);	// Set the remaining point cloud as input
-	ec.extract(cluster_indices);			// Extract the clusters and save the results in cluster_indices
+	ec.setClusterTolerance(0.1f); 	// Maximum distance between points in a cluster (1cm)
+	ec.setMinClusterSize(100);			// Minimum 100 points for a cluster
+	ec.setMaxClusterSize(25000);		// Maximum 25000 points for a cluster
+	ec.setSearchMethod(kdtree);
+	ec.setInputCloud(cloud_filtered);
+	ec.extract(cluster_indices);
+	if(cluster_indices.empty())
+	{
+		PCL_ERROR("No clusters were found\n");
+		return;
+	}
 
-	// Stampa i risultati
-	std::cout << "Numero di cluster trovati: " << cluster_indices.size() << std::endl;
-
-
-
-	/* TODO: 6) Set the spatial tolerance for new cluster candidates (pay attention to the tolerance!!!) */ 
-	//std::vector<pcl::PointIndices> cluster_indices;
-
-	#ifdef USE_PCL_LIBRARY
-			// PCL functions
-			// HERE 6)
-	#else
-			// Optional assignment
-			my_pcl::KdTree treeM;
-			treeM.set_dimension(3);
-			setupKdtree(cloud_filtered, &treeM, 3);
-			cluster_indices = euclideanCluster(cloud_filtered, &treeM, clusterTolerance, setMinClusterSize, setMaxClusterSize);
-	#endif
-
-	//const Color colors[] = { Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1) };
-
+	PCL_INFO("Number of clusters found: %d\n", cluster_indices.size());
+	
 	/**
 	 * Now we extracted the clusters out of our point cloud and saved the indices in cluster_indices. 
 	 * To separate each cluster out of the vector<pcl::PointIndices> we have to iterate through cluster_indices, 
 	 * create a new PointCloud for each entry and write all points of the current cluster in the PointCloud.
 	 * Compute euclidean distance
 	 */
+	const Eigen::Vector3f ego_position(0.0f, 0.0f, 0.0f); // vehicle position
+	
+	int cluster_id = 0;
+	for (const auto& indices : cluster_indices)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+		for (const auto& idx : indices.indices)
+			cloud_cluster->push_back((*cloud_filtered)[idx]);
 
-	// int j = 0;
-	// int clusterId = 0;
-	// for (auto it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
-	// {
-	// 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-	// 	for(auto pit = it->indices.begin(); pit != it->indices.end(); ++pit)
-	// 		cloud_cluster->push_back((*cloud_filtered)[*pit]); 
-		
-	// 	cloud_cluster->width = cloud_cluster->size();
-	// 	cloud_cluster->height = 1;
-	// 	cloud_cluster->is_dense = true;
+		cloud_cluster->width = cloud_cluster->size();  
+		cloud_cluster->height = 1; 
+		cloud_cluster->is_dense = true;
+		PCL_INFO("Cluster %d has %d points\n", cluster_id, cluster_indices.size());
 
-	// 	char buff[32]{};
-	// 	std::format_to_n(buff, sizeof(buff), "Input_Cloud_{}", clusterId);
-	// 	renderer.RenderPointCloud(input_cloud, buff, colors[2]);
-		
-	// 	/* TODO: 7) render the cluster and plane without rendering the original cloud  */ 
+		char buff[32]{};
+		std::format_to_n(buff, sizeof(buff), "cluster_{}", cluster_id);
 
-	// 	/* Here we create the bounding box on the detected clusters */
-	// 	pcl::PointXYZ minPt, maxPt;
-	// 	pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
+		/**
+		 * 7) render the cluster and plane without rendering the original cloud
+		 */
+    //renderer.RenderPointCloud(cloud_cluster, buff, Color(1.f, 1.f, 1.f));
 
-	// 	/* TODO: 8) Here you can plot the distance of each cluster w.r.t ego vehicle */
-	// 	Box box;
-	// 	box.min_pos = Eigen::Vector3f{ minPt.x, minPt.y, minPt.z };
-	// 	box.max_pos = Eigen::Vector3f{ maxPt.x, maxPt.y, maxPt.z };
+		/**
+		 * 8) Here you can plot the distance of each cluster w.r.t ego vehicle
+		 */
+		pcl::PointXYZ minPt, maxPt;
+		pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
 
-	// 	/**
-	// 	 * TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle.
-	// 	 * Please take a look at the function RenderBox to see how to color the box
-	// 	 */
-	// 	renderer.RenderBox(box, j);
+		Box box;
+		box.min_pos = Eigen::Vector3f{ minPt.x, minPt.y, minPt.z };
+		box.max_pos = Eigen::Vector3f{ maxPt.x, maxPt.y, maxPt.z };
 
-	// 	clusterId++;
-	// 	j++;
-	// }  
+		// Calculate the center of the bounding box
+		Eigen::Vector3f cluster_center = (box.min_pos + box.max_pos) / 2.0f;
+
+		// Calculates the distance between the center of the cluster and the ego vehicle
+    float distance_to_vehicle = (cluster_center - ego_position).norm();
+    PCL_INFO("Distance cluster_%d - vehicle: %.2f meters\n", cluster_id, distance_to_vehicle);
+
+		/**
+		 * 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle.
+		 * Please take a look at the function RenderBox to see how to color the box
+		 */
+		if (box.min_pos.x() > 0.0f && distance_to_vehicle > 5.0f)
+			renderer.RenderBox(box, cluster_id, Color(1.f / (cluster_id+1), 0.0f, 0.0f), 1.f);
+		else
+			renderer.RenderBox(box, cluster_id, Color(1.0f, 1.0f, 1.0f), 1.f);
+
+    cluster_id++;
+	}
 }
 
 
