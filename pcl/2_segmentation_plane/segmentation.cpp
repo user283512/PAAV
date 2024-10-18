@@ -48,8 +48,6 @@ int main ()
 	seg.setMaxIterations(1000);
 	seg.setDistanceThreshold(0.1f);
 
-	pcl::ExtractIndices<pcl::PointXYZ> extract;
-
 	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
@@ -67,11 +65,12 @@ int main ()
 			break;
 		}
 
+		pcl::ExtractIndices<pcl::PointXYZ> extract;
 		extract.setInputCloud(cloud_filtered);
 		extract.setIndices(inliers);
 		extract.setNegative(false);
 		extract.filter(*cloud_plane);
-		PCL_INFO("PointCloud cloud_plane has %d points\n", cloud_plane->size());
+		PCL_INFO("Cloud plane has %d points\n", cloud_plane->size());
 
 		char out[32]{};
 		std::format_to_n(out, sizeof(out), "cloud_plane_{}.pcd", nr_segmented);
