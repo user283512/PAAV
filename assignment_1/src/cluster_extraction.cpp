@@ -23,6 +23,13 @@
 
 #define USE_PCL_LIBRARY
 
+#define USE_DATASET_2
+#ifdef USE_DATASET_1
+	#define DATASET "res/dataset_1"
+#else
+	#define DATASET "res/dataset_2"
+#endif
+
 namespace fs = std::filesystem;
 using namespace lidar_obstacle_detection;
 using my_visited_set_t = std::unordered_set<int>;
@@ -107,9 +114,9 @@ static std::vector<pcl::PointIndices> euclideanCluster(
 	int setMaxClusterSize
 )
 {
-	my_visited_set_t visited{};         // already visited points
+	my_visited_set_t visited{}; // already visited points
 	std::vector<pcl::PointIndices> clusters; // vector of pcl::PointIndices that will contain all the clusters
-	std::vector<int> cluster;           // vector of int that is used to store the points that the function proximity will give me back
+	std::vector<int> cluster; // vector of int that is used to store the points that the function proximity will give me back
 
 	//for every point of the cloud
 	//  if the point has not been visited (use the function called "find")
@@ -126,19 +133,30 @@ static std::vector<pcl::PointIndices> euclideanCluster(
 
 static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& input_cloud)
 {
-	/**
+	/** 
+	 * ====================================================
 	 * 1) Downsample the dataset
+	 * ====================================================
 	 */
-	constexpr float downscaling = 0.1f;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+
+	// Declaring the cloud_filtered object as static can help maintain a higher frame rate, 
+	// as it avoids allocating dynamic memory at each iteration. 
+	// In this way, you can reuse the existing object and simply update it with the new data, 
+	// reducing the memory allocation and deallocation overhead.
+	static pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+	cloud_filtered->clear();
+
 	pcl::VoxelGrid<pcl::PointXYZ> voxel_filtering;
+	constexpr float downscaling = 0.1f;
 	voxel_filtering.setInputCloud(input_cloud);
 	voxel_filtering.setLeafSize(downscaling, downscaling, downscaling);
 	voxel_filtering.filter(*cloud_filtered);
 	PCL_INFO("1)After filtering: %d points\n", cloud_filtered->size());
 
 	/**
-	 * 2) here we crop the points that are far away from us, in which we are not interested
+	 * ====================================================
+	 * 2) here we crop the points that are far away from us
+	 * ====================================================
 	 */
 	pcl::CropBox<pcl::PointXYZ> cb(true);
 	cb.setInputCloud(cloud_filtered);
@@ -148,49 +166,23 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 	PCL_INFO("2)After cropping: %d points\n", cloud_filtered->size());
 
 	/**
-	 * 3) Segmentation and apply RANSAC
-	 */
-#if 0
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_segmented(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	seg.setOptimizeCoefficients(true);
-	seg.setModelType(pcl::SACMODEL_PLANE);
-	seg.setMethodType(pcl::SAC_RANSAC);
-	seg.setDistanceThreshold(0.1f);
-	seg.setInputCloud(cloud_filtered);
-	seg.segment(*inliers, *coefficients);
-	if (inliers->indices.size() == 0) 
-	{
-		std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
-		return;
-	}
-
-	// The indices of the points that belong to the plane are extracted with pcl::ExtractIndices.
-	// PCL defines a way to define a region of interest (list of point indices)
-	// that the algorithm should operate on, rather than the entire cloud, via setIndices.
-	pcl::ExtractIndices<pcl::PointXYZ> extract;
-	extract.setInputCloud(cloud_filtered);
-	extract.setIndices(inliers);
-	extract.setNegative(false);	// Retrieve indices to all points in cloud_filtered but only those referenced by inliers
-	extract.filter(*cloud_segmented); // We effectively retrieve JUST the plane
-
-	std::cout << "PointCloud representing the planar component: " 
-		<< cloud_segmented->width * cloud_segmented->height << " points\n";
-
-	renderer.RenderPointCloud(cloud_segmented, "cloud_segmented", Color(1.f, 1.f, 1.f));
-#endif
-
-	/**
-	 * 4) Iterate on the point cloud, segment the main plane each time, remove inliers 
+	 * ========================================================================================================
+	 * 3-4) Segmentation and apply RANSAC.
+	 * Iterate on the point cloud, segment the main plane each time, remove inliers 
 	 * (those that belong to the plane) and repeat until there are no more significant planes to segment.
+	 * ========================================================================================================
 	 */
 	PCL_INFO("3-4) Segmentation with RANSAC method...\n");
-	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
+
+	// Declaring these objects as static means that they are allocated only once and 
+	// their contents are simply updated in subsequent iterations, 
+	// thus reducing the overhead of dynamic allocation
+	static pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	static pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	static pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
+	coefficients->values.clear();
+	inliers->indices.clear();
+	cloud_plane->clear();
 
 	pcl::SACSegmentation<pcl::PointXYZ> seg;
 	seg.setOptimizeCoefficients(true);
@@ -227,10 +219,13 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 	}
 	
 	PCL_INFO("Total number of segmentations: %d\n", nr_segmentations);
+	//renderer.RenderPointCloud(cloud_filtered, "cloud_filtered", Color(1.f, 1.f, 1.f));
 
-	/**
+	/** 
+	 * ========================================================================================================
 	 * 5-6) Create the KDTree and the vector of pcl::PointIndices and 
 	 * set the spatial tolerance for new cluster candidates
+	 * ========================================================================================================
 	 */
 
 	// #ifdef USE_PCL_LIBRARY
@@ -244,28 +239,47 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 	// #endif
 
 	PCL_INFO("5-6)Perform clustering using the KDTree...\n");
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
+
+	// Instead of reallocating it at each iteration, you simply set a new point cloud 
+	// using the setInputCloud method, which avoids having to make a new dynamic allocation
+	static pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
 	kdtree->setInputCloud(cloud_filtered);
 	if (kdtree->getInputCloud()->empty())
 	{
-		PCL_ERROR("KDTree input cloud is empty\n");
+		PCL_WARN("KDTree input cloud is empty\n");
 		return;
 	}
 
-	std::vector<pcl::PointIndices> cluster_indices;
+	// To avoid new allocations in each iteration of the loop, you can use clear() 
+	// to empty the contents of the vector but keep the capacity already allocated
+	static std::vector<pcl::PointIndices> cluster_indices;
+	cluster_indices.clear();
+	
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance(0.1f); 	// Maximum distance between points in a cluster (1cm)
-	ec.setMinClusterSize(100);			// Minimum 100 points for a cluster
-	ec.setMaxClusterSize(25000);		// Maximum 25000 points for a cluster
+
+#ifdef USE_DATASET_1
+	// for dataset_1:
+	//		setClusterTolerance(0.3f)
+	// 		setMinClusterSize(100)
+	ec.setClusterTolerance(0.3f); 	// Maximum distance between points in a cluster (1.0 = 1m)
+	ec.setMinClusterSize(250);			// Minimum points for a cluster
+#else 
+	// for dataset_2:
+	//		setClusterTolerance(0.3f)
+	// 		setMinClusterSize(100)
+	ec.setClusterTolerance(0.3f); 	// Maximum distance between points in a cluster (1.0 = 1m)
+	ec.setMinClusterSize(100);				// Minimum points for a cluster
+#endif
+
+	ec.setMaxClusterSize(10000); // Maximum points for a cluster
 	ec.setSearchMethod(kdtree);
 	ec.setInputCloud(cloud_filtered);
 	ec.extract(cluster_indices);
 	if(cluster_indices.empty())
 	{
-		PCL_ERROR("No clusters were found\n");
+		PCL_WARN("No clusters were found\n");
 		return;
 	}
-
 	PCL_INFO("Number of clusters found: %d\n", cluster_indices.size());
 	
 	/**
@@ -274,49 +288,49 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 	 * create a new PointCloud for each entry and write all points of the current cluster in the PointCloud.
 	 * Compute euclidean distance
 	 */
+
 	const Eigen::Vector3f ego_position(0.0f, 0.0f, 0.0f); // vehicle position
-	
 	int cluster_id = 0;
 	for (const auto& indices : cluster_indices)
 	{
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+		static pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+		cloud_cluster->clear();
 		for (const auto& idx : indices.indices)
-			cloud_cluster->push_back((*cloud_filtered)[idx]);
-
-		cloud_cluster->width = cloud_cluster->size();  
-		cloud_cluster->height = 1; 
+		{
+			const auto& point = (*cloud_filtered)[idx];
+			cloud_cluster->push_back(point);
+		}
+		cloud_cluster->width = cloud_cluster->size();
+		cloud_cluster->height = 1;
 		cloud_cluster->is_dense = true;
 		PCL_INFO("Cluster %d has %d points\n", cluster_id, cluster_indices.size());
 
-		char buff[32]{};
-		std::format_to_n(buff, sizeof(buff), "cluster_{}", cluster_id);
-
 		/**
+		 * ========================================================================================================
 		 * 7) render the cluster and plane without rendering the original cloud
+		 * ========================================================================================================
 		 */
-    //renderer.RenderPointCloud(cloud_cluster, buff, Color(1.f, 1.f, 1.f));
+		// char buff[32]{};
+		// std::format_to_n(buff, sizeof(buff), "cluster_{}", cluster_id);
+    // renderer.RenderPointCloud(cloud_cluster, buff, Color(0.2f, 0.1f, 1.f/(cluster_id+1)));
 
 		/**
-		 * 8) Here you can plot the distance of each cluster w.r.t ego vehicle
+		 * ========================================================================================================
+		 * 8-9) Plot the distance of each cluster w.r.t ego vehicle and 
+		 * color the vehicles that are both in front and 5 meters away from the ego vehicle.
+		 * ========================================================================================================
 		 */
 		pcl::PointXYZ minPt, maxPt;
 		pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
-
 		Box box;
 		box.min_pos = Eigen::Vector3f{ minPt.x, minPt.y, minPt.z };
 		box.max_pos = Eigen::Vector3f{ maxPt.x, maxPt.y, maxPt.z };
-
 		// Calculate the center of the bounding box
 		Eigen::Vector3f cluster_center = (box.min_pos + box.max_pos) / 2.0f;
-
 		// Calculates the distance between the center of the cluster and the ego vehicle
     float distance_to_vehicle = (cluster_center - ego_position).norm();
-    PCL_INFO("Distance cluster_%d - vehicle: %.2f meters\n", cluster_id, distance_to_vehicle);
+ 	  PCL_INFO("Distance cluster_%d - vehicle: %.2f meters\n", cluster_id, distance_to_vehicle);
 
-		/**
-		 * 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle.
-		 * Please take a look at the function RenderBox to see how to color the box
-		 */
 		if (box.min_pos.x() > 0.0f && distance_to_vehicle > 5.0f)
 			renderer.RenderBox(box, cluster_id, Color(1.f / (cluster_id+1), 0.0f, 0.0f), 1.f);
 		else
@@ -329,7 +343,7 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 
 int main()
 {
-	static const auto dataset_dir = fs::current_path().parent_path() / "res/dataset_1";
+	static const auto dataset_dir = fs::current_path().parent_path() / DATASET;
 
 	Renderer renderer;
 	renderer.InitCamera(CameraAngle::XY);
