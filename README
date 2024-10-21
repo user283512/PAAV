@@ -22,13 +22,3 @@
   based on the spatial proximity of points in the cloud. 
   In practice, the algorithm attempts to group together points that are close to each other 
   in three-dimensional space, forming clusters, where each cluster represents a potential physical object.
-
-
-# Assignment 1
-[ ] punto 1
-[ ] punto 2
-[ ] punto 3
-[ ] punto 4
-[ ] punto 5
-[ ] punto 6
-[ ] punto 7
