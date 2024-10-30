@@ -12,12 +12,14 @@ Tracker::Tracker()
 /** This function removes tracks based on any strategy */
 void Tracker::removeTracks()
 {
-	std::vector<Tracklet> tracks_to_keep;
+	static std::vector<Tracklet> tracks_to_keep;
+	tracks_to_keep.clear();
+	
 	for (Tracklet& track : tracks_)
 	{
 		//Tracklets that have not been updated for a number of consecutive frames are deleted.
 		if (track.getLossCount() < loss_threshold) 
-			tracks_to_keep.push_back(track);
+			tracks_to_keep.emplace_back(track.getId(), track.getX(), track.getY());
 	}
 
 	// Keep only valid traces
@@ -26,7 +28,7 @@ void Tracker::removeTracks()
 
 /** This function add new tracks to the set of tracks ("tracks_" is the object that contains this) */
 void Tracker::addTracks(
-	const std::vector<bool> &associated_detections, 
+	const std::vector<bool> 	&associated_detections, 
 	const std::vector<double> &centroids_x, 
 	const std::vector<double> &centroids_y
 )
@@ -44,7 +46,7 @@ void Tracker::addTracks(
  * 	centroids_x & centroids_y measurements representing the detected objects
  */
 void Tracker::dataAssociation(
-	std::vector<bool> &associated_detections, 
+	std::vector<bool> 				&associated_detections, 
 	const std::vector<double> &centroids_x, 
 	const std::vector<double> &centroids_y
 )
@@ -76,7 +78,7 @@ void Tracker::dataAssociation(
 		// Associate the closest detection to a tracklet
 		if (min_dist < distance_threshold_ && closest_point_id != -1)
 		{
-			associated_track_det_ids_.push_back(std::make_pair(closest_point_id, i));
+			associated_track_det_ids_.emplace_back(closest_point_id, i);
 			associated_detections.at(closest_point_id) = true;
 		}
 	}
