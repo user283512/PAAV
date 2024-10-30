@@ -15,12 +15,14 @@ void KalmanFilter::init(double dt)
   // create a 4D state vector
   x_ = Eigen::VectorXd(4);
 
-  // TODO: Initialize the state covariance matrix P
-  P_ = Eigen::MatrixXd(4, 4);
-  P_ << 9999., 0., 0., 0.,
-      0., 9999., 0., 0.,
-      0., 0., 9999., 0.,
-      0., 0., 0., 9999.;
+  // In this update, the state covariance matrix P_ is initialized with values 
+  // representing a large uncertainty for the initial velocities (1000), 
+  // while the initial positions are assigned a value of
+  P_ = Eigen::MatrixXd(4, 4); 
+  P_ << 1.0, 0.0, 0.0,    0.0,
+        0.0, 1.0, 0.0,    0.0,
+        0.0, 0.0, 1000.0, 0.0,
+        0.0, 0.0, 0.0,    1000.0;
 
   // measurement covariance
   R_ = Eigen::MatrixXd(2, 2);
@@ -57,25 +59,26 @@ void KalmanFilter::init(double dt)
 
 void KalmanFilter::predict()
 {
-  // TODO
-  // Implement Kalman Filter Predict
-  //  x_ = ...
-  //  P_ = ...
+  // Project the state ahead
+  x_ = F_ * x_;
+  // Project the error covariance ahead
+  P_ = F_ * P_ * F_.transpose() + Q_;
 }
 
 void KalmanFilter::update(const Eigen::VectorXd &z)
 {
-  // TODO
-  // Implement Kalman Filter Update
+  Eigen::MatrixXd Ht = H_.transpose();
+  Eigen::MatrixXd S = H_ * P_ * Ht + R_;  // Covariance of the measure
+  Eigen::MatrixXd Si = S.inverse();
+  Eigen::MatrixXd K = P_ * Ht * Si;       // Kalman gain
 
-  // Eigen::VectorXd y = ...
-  // Eigen::MatrixXd S = ...
-  // Eigen::MatrixXd K = ...
-
-  // new estimate
-  // x_ = ...
-  // Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x_.size(), x_.size());
-  // P_ = ...
+  // Update the estimated state
+  Eigen::VectorXd y = z - H_ * x_;
+  x_ = x_ + K * y;
+  
+  // Update the error covariance
+  Eigen::MatrixXd I = Eigen::MatrixXd::Identity(x_.size(), x_.size());
+  P_ = (I - K * H_) * P_;
 }
 
 void KalmanFilter::setState(double x, double y)

@@ -8,7 +8,7 @@ class Tracker
 {
 public:
   Tracker();
-  ~Tracker();
+  ~Tracker() = default;
 
   // handle tracklets
   void removeTracks();
