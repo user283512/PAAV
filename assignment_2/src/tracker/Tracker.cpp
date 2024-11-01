@@ -22,21 +22,27 @@ Tracker::Tracker()
 		associated_track_det_ids_{}
 {}
 
-/** This function removes tracks based on any strategy */
+
 void Tracker::removeTracks()
 {
-	static std::vector<Tracklet> tracks_to_keep;
-	tracks_to_keep.clear();
+	/**
+	 * This function iterate through the vector of Tracklets and removes those with too many leaks or 
+	 * too much uncertainty, keeping only those Tracklets active and reliable for the next tracking cycle.
+	 */
 	
-	for (Tracklet& track : tracks_)
+	// We invert the tracks_ vector to avoid iterator invalidation problems when we delete elements.
+  for (int i = tracks_.size() - 1; i >= 0; i--)
 	{
-		//Tracklets that have not been updated for a number of consecutive frames are deleted.
-		if (track.getLossCount() < loss_threshold) 
-			tracks_to_keep.emplace_back(track.getId(), track.getX(), track.getY());
-	}
-
-	// Keep only valid traces
-	tracks_.swap(tracks_to_keep);
+		auto& track = tracks_[i];
+    if (
+			track.getLossCount() > loss_threshold_ || 
+			track.getXCovariance() > covariance_threshold || 
+			track.getYCovariance() > covariance_threshold
+		)
+		{
+      tracks_.erase(tracks_.begin() + i);
+    }
+  }
 }
 
 /** This function add new tracks to the set of tracks ("tracks_" is the object that contains this) */
