@@ -22,16 +22,10 @@ Tracker::Tracker()
 		associated_track_det_ids_{}
 {}
 
-
 void Tracker::removeTracks()
 {
-	/**
-	 * This function iterate through the vector of Tracklets and removes those with too many leaks or 
-	 * too much uncertainty, keeping only those Tracklets active and reliable for the next tracking cycle.
-	 */
-	
 	// We invert the tracks_ vector to avoid iterator invalidation problems when we delete elements.
-  for (int i = tracks_.size() - 1; i >= 0; i--)
+  for (size_t i = tracks_.size() - 1; i >= 0; i--)
 	{
 		auto& track = tracks_[i];
     if (
@@ -45,14 +39,15 @@ void Tracker::removeTracks()
   }
 }
 
-/** This function add new tracks to the set of tracks ("tracks_" is the object that contains this) */
 void Tracker::addTracks(
 	const std::vector<bool> 	&associated_detections, 
 	const std::vector<double> &centroids_x, 
 	const std::vector<double> &centroids_y
 )
 {
-	// Adding not associated detections
+	// For each detection, we check associated_detections[i]. 
+	// If it is false, it means that the detection is not associated with any existing track, 
+	// so a new Tracklet will be created.
 	for (size_t i = 0; i < associated_detections.size(); i++)
 		if (!associated_detections[i])
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);

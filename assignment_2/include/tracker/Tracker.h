@@ -10,8 +10,17 @@ public:
   Tracker();
   ~Tracker() = default;
 
-  // handle tracklets
+  /**
+   * This function iterate through the vector of Tracklets and removes those with too many leaks or 
+   * too much uncertainty, keeping only those Tracklets active and reliable for the next tracking cycle.
+   */
   void removeTracks();
+  
+  /**
+   * This function is responsible for creating new Tracklet objects 
+   * for detections that have not been associated with existing tracklets. 
+   * This is typically done when a new object enters the scene or an existing object re-appears after being occluded.
+   */
   void addTracks(const std::vector<bool> &associated_detections,
                  const std::vector<double> &centroids_x,
                  const std::vector<double> &centroids_y);
