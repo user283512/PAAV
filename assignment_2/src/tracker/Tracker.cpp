@@ -2,9 +2,22 @@
 
 Tracker::Tracker()
 	: cur_id_{ 0 },
-		distance_threshold_{ 2.0f }, // Distance threshold: we set a reasonable value to filter objects far from the traces
-		covariance_threshold{ 1.0f },// Covariance threshold: we set a reasonable value for the quality of estimates
-		loss_threshold{ 3 },				 // Loss threshold: number of frames in which a trace may not be visible before it is removed
+		distance_threshold_{ 30.0f },		// the maximum distance for which a detection can be considered 
+																		// to be associated with an existing Tracklet.
+																		// A value of 30.0 meters may be reasonable for tracking objects 
+																		// at short or medium range (e.g., vehicles or pedestrians).
+		
+		covariance_threshold{ 500.0f }, // The covariance threshold is used to assess the quality of the estimate. 
+																		// A value of 500.0 may indicate a moderate amount of uncertainty, 
+																		// which is acceptable. 
+																		// If the covariance of a Tracklet exceeds this value, it may be considered 
+																		// unreliable and therefore removed.
+
+		loss_threshold{ 3 },						// This value defines how many consecutive updates a Tracklet can "miss"
+																		// (i.e., not find an association) before it is removed.
+																		// An object may be undetected for three consecutive updates before it is 
+																		// removed from tracking
+		
 		tracks_{},
 		associated_track_det_ids_{}
 {}
