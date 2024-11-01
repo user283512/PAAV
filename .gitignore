@@ -1,7 +1,4 @@
 .vscode
 *.o
 **/build/
-**/dataset_1.rar
-**/dataset_2.rar
-**/dataset_1
-**/dataset_2
+*.pcd
