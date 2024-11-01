@@ -29,7 +29,7 @@ void Tracker::removeTracks()
 	{
 		auto& track = tracks_[i];
     if (
-			track.getLossCount() > loss_threshold_ || 
+			track.getLossCount() > loss_threshold || 
 			track.getXCovariance() > covariance_threshold || 
 			track.getYCovariance() > covariance_threshold
 		)
@@ -53,47 +53,59 @@ void Tracker::addTracks(
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);
 }
 
-/**
- * This function associates detections (centroids_x,centroids_y) with the tracks (tracks_)
- * Input:
- * 	+associated_detection an empty vector to host the associated detection
- * 	centroids_x & centroids_y measurements representing the detected objects
- */
 void Tracker::dataAssociation(
 	std::vector<bool> 				&associated_detections, 
 	const std::vector<double> &centroids_x, 
 	const std::vector<double> &centroids_y
 )
 {
-	//Remind this vector contains a pair of tracks and its corresponding
+	// Initializes the association vector as false for each detection
+	associated_detections.assign(centroids_x.size(), false);
+
+	// Clean the list of previous associations
 	associated_track_det_ids_.clear();
 
-	for (size_t i = 0; i < tracks_.size(); i++)
+  for (size_t i = 0; i < centroids_x.size(); ++i)
 	{
-		int closest_point_id = -1;
-		double min_dist = std::numeric_limits<double>::max();
+ 		double min_distance = std::numeric_limits<double>::max(); 
+		int best_match = -1;
 
-		for (size_t j = 0; j < centroids_x.size(); j++)
+		for (size_t j = 0; j < tracks_.size(); ++j)
 		{
-			// Find the closest detection (centroids_x, centroids_y) to the current track
-			if (!associated_detections[j])
-			{
-				double dx = tracks_[i].getX() - centroids_x[j];
-        double dy = tracks_[i].getY() - centroids_y[j];
-        double dist = std::sqrt(dx * dx + dy * dy);
-				if (dist < min_dist) 
-				{
-          min_dist = dist;
-          closest_point_id = j;
-				}
+			// If it is already associated, move on to the next
+			if (associated_detections[j]) 
+				continue; 
+
+			// Calculate the Euclidean distance 
+			Tracklet& track = tracks_[j];
+			double dx = centroids_x[i] - track.getX(); 
+			double dy = centroids_y[i] - track.getY(); 
+			double distance = std::sqrt(dx*dx + dy*dy);
+
+			// Check if it is the best match 
+			if (distance < min_distance) 
+			{ 
+				min_distance = distance; 
+				best_match = j;
 			}
 		}
 
-		// Associate the closest detection to a tracklet
-		if (min_dist < distance_threshold_ && closest_point_id != -1)
-		{
-			associated_track_det_ids_.emplace_back(closest_point_id, i);
-			associated_detections.at(closest_point_id) = true;
+		// If we found a Tracklet close enough
+		if (best_match != -1 && min_distance < distance_threshold_) 
+		{ 
+			// Associates tracking with the nearest Tracklet
+    	associated_detections[i] = true;
+
+			// Update the Tracklet with the new detection location
+    	tracks_[best_match].update(centroids_x[i], centroids_y[i], true);
+
+			// Add association to the list (optional, to keep track of associations)
+    	associated_track_det_ids_.emplace_back(best_match, i);
+		} 
+		else
+		{ 
+			// No Tracklet is close enough for an association
+			associated_detections[i] = false; // Leave detection unassociated
 		}
 	}
 }

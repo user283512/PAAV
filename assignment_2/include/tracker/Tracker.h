@@ -25,7 +25,11 @@ public:
                  const std::vector<double> &centroids_x,
                  const std::vector<double> &centroids_y);
 
-  // associate tracklets and detections
+  /**
+   * This function is responsible for associating existing detections (centroids) 
+   * with Tracklets already in the tracker. We will use a distance measure (Euclidean distance) 
+   * to determine whether a detection is close enough to an existing Tracklet to be considered associated.
+   */
   void dataAssociation(std::vector<bool> &associated_detections,
                        const std::vector<double> &centroids_x,
                        const std::vector<double> &centroids_y);
