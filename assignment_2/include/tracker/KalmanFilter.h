@@ -6,8 +6,8 @@
 class KalmanFilter
 {
 public:
-  KalmanFilter();
-  ~KalmanFilter();
+  KalmanFilter() = default;
+  ~KalmanFilter() = default;
 
   // init the filter
   void init(double dt);
@@ -28,22 +28,69 @@ private:
   // dt in seconds
   double dt_;
 
-  // state vector
+  /**
+   * The state vector.
+   * 
+   * Represents the current estimated state of the system.
+   * It's a 4D vector, likely representing position (x, y) and velocity (vx, vy).
+   * The Kalman Filter aims to continually update this vector to better reflect the true state.
+   */
   Eigen::VectorXd x_;
 
-  // state covariance matrix
+  /**
+   * The state covariance matrix.
+   * 
+   * Quantifies the uncertainty in the state vector.
+   * It's a 4x4 matrix, where the diagonal elements represent the variance of each state variable, 
+   * and the off-diagonal elements represent the covariance between state variables.
+   * 
+   * A high value on a diagonal element indicates greater uncertainty on that variable, 
+   * while lower values indicate greater reliability.
+   */ 
   Eigen::MatrixXd P_;
 
-  // state transistion matrix
+  /**
+   * The state transistion matrix.
+   * 
+   * Defines how the state vector x_ evolves from one instant of time to the next in the absence of noise.
+   * This matrix models the dynamics of the system (e.g., position changes as a function of velocity) 
+   * and may include terms related to time dt. 
+   * 
+   * Is constructed to represent a simple motion model in which the new position depends s
+   * on velocity and time dt
+   */ 
   Eigen::MatrixXd F_;
 
-  // process covariance matrix
+  /**
+   * The process covariance matrix.
+   * 
+   * Represents the uncertainty or noise of the process model. 
+   * The elements of the diagonal represent the uncertainty for each variable, 
+   * and in this case are calculated as a function of dt and the noise parameters noise_ax_ and noise_ay_, 
+   * which are associated with the change in acceleration.
+   */ 
   Eigen::MatrixXd Q_;
 
-  // measurement matrix
+  /**
+   * The measurement matrix.
+   * 
+   * Maps the state vector x_ to the space of measurements. 
+   * It transforms state variables into those we actually observe, for example 
+   * by mapping (x,y,vx,vy)(x,y,vx,vy) to the measured position coordinates (x,y)(x,y). 
+   * Extracts only the x and y position components, ignoring the velocities, for a partial measurement of the system.
+   */ 
   Eigen::MatrixXd H_;
 
-  // measurement covariance matrix
+  /**
+   * The measurement covariance matrix.
+   * 
+   * Represents the uncertainty associated with measurement noise. 
+   * The values on the diagonal indicate the variance of the noise for each measurement 
+   * (e.g., the noise of the xx and yy position measurements), while the off-diagonal elements 
+   * represent the covariance between measurements. 
+   * 
+   * A higher value for a certain measurement indicates that the measurement itself is less reliable.
+   */ 
   Eigen::MatrixXd R_;
 };
 

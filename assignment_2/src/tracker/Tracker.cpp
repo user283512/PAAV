@@ -7,7 +7,7 @@ Tracker::Tracker()
 		loss_threshold{ 3 },				 // Loss threshold: number of frames in which a trace may not be visible before it is removed
 		tracks_{},
 		associated_track_det_ids_{}
-{ }
+{}
 
 /** This function removes tracks based on any strategy */
 void Tracker::removeTracks()

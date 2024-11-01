@@ -10,14 +10,13 @@
 #include "CloudManager.h"
 
 namespace fs = std::filesystem;
-const static fs::path dir_res_path = fs::current_path().parent_path() / "res";
-const static fs::path dir_log_path = dir_res_path / "log";
+static const fs::path dir_res_path = fs::current_path().parent_path() / "res";
+static const fs::path dir_log_path = dir_res_path / "log";
+static const std::string dir_log_string = dir_log_path.string();
+static constexpr int64_t freq = 100;  // Frequency of the thread dedicated to process the point cloud
 
 int main()
 {
-	constexpr int64_t freq = 100;  // Frequency of the thread dedicated to process the point cloud
-	const std::string dir_log_string = dir_log_path.string();
-
 	std::ifstream dataFile(dir_log_string, std::ios::in | std::ios::binary);
 	if (!dataFile)
 	{

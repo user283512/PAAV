@@ -13,10 +13,6 @@ Tracklet::Tracklet(int idTrack, double x, double y)
   loss_count_ = 0;
 }
 
-Tracklet::~Tracklet()
-{
-}
-
 // Predict a single measurement
 void Tracklet::predict()
 {
