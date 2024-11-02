@@ -34,7 +34,10 @@ public:
                        const std::vector<double> &centroids_x,
                        const std::vector<double> &centroids_y);
 
-  // track objects
+  /**
+   * It manages the entire update cycle for tracklets, including future state prediction, 
+   * data association, and track update.
+   */
   void track(const std::vector<double> &centroids_x,
              const std::vector<double> &centroids_y,
              bool lidarStatus);

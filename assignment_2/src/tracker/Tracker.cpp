@@ -53,7 +53,6 @@ void Tracker::addTracks(
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);
 }
 
-
 void Tracker::dataAssociation(
 	std::vector<bool> 				&associated_detections, 
 	const std::vector<double> &centroids_x, 
@@ -123,57 +122,38 @@ void Tracker::track(
   bool lidarStatus
 )
 {
-	std::vector<bool> associated_detections(centroids_x.size(), false);
-
-	/**
-	 * ======================================
-	 * 1. Prediction
-	 * ======================================
-	 */
-
-	// Predict the position:
-	// for each track --> Predict the position of the tracklets
+	// ======================================
+	// 1. Prediction
+	// ======================================
+	//
+	// Before associating new detections, each existing tracklet calls the predict method 
+	// to update the predicted state.
+	// This helps estimate where the tracklets will be at the next round of detections.
 	for (Tracklet& track : tracks_)
     track.predict();
 	
-	/**
-	 * ======================================
-	 * 2. Association
-	 * ======================================
-	 */
-
-	// Associate the predictions with the detections
+	// ======================================
+	// 2. Data Association
+	// ======================================
+	// 
+	// Calls the dataAssociation method to associate new centroids (detections) with existing tracklets.
+	// dataAssociation updates associated_detections to indicate which detections have been associated.
+	std::vector<bool> associated_detections;
 	dataAssociation(associated_detections, centroids_x, centroids_y);
 
-	/**
-	 * ======================================
-	 * 3. Update
-	 * ======================================
-	 */
-
-	// Update tracklets with the new detections
-	for (const auto& pair : associated_track_det_ids_)
-	{
-		int det_id = pair.first;
-		int track_id = pair.second;
-		tracks_.at(track_id).update(centroids_x.at(det_id), centroids_y.at(det_id), lidarStatus);
-	}
-
-	/**
-	 * ======================================
-	 * 4. Removal
-	 * ======================================
-	 */
-
-	// Remove dead traces (with loss above threshold)
-	removeTracks();
-
-	/**
-	 * ======================================
-	 * 5. Addition
-	 * ======================================
-	 */
-
-	// Add new tracklets
+	// ======================================
+	// 3. Addition of New Tracklets
+	// ======================================
+	//
+	// Use the addTracks method to create new tracklets for detections that have not been associated 
+	// with any existing tracklet.
+	// Each new unassociated detection generates a new tracklet with a unique ID.
 	addTracks(associated_detections, centroids_x, centroids_y);
+
+	// ======================================
+	// 4. Addition of New Tracklets
+	// ======================================
+	// Call the removeTracks method to remove tracklets that have too many update failures 
+	// (exceed loss_threshold) or too much uncertainty (exceed covariance_threshold).
+	removeTracks();
 }
