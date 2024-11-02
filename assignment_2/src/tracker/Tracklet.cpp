@@ -23,13 +23,12 @@ void Tracklet::predict()
 // Update with a real measurement
 void Tracklet::update(double x, double y, bool lidarStatus)
 {
-  Eigen::VectorXd raw_measurements_ = Eigen::VectorXd(2);
+  if (!lidarStatus) 
+    return;
 
   // measurement update
-  if (lidarStatus)
-  {
-    raw_measurements_ << x, y;
-    kf_.update(raw_measurements_);
-    loss_count_ = 0;
-  }
+  Eigen::VectorXd raw_measurements_ = Eigen::VectorXd(2);
+  raw_measurements_ << x, y;
+  kf_.update(raw_measurements_);
+  loss_count_ = 0;
 }

@@ -22,6 +22,7 @@ public:
   double getYCovariance() { return kf_.getYCovariance(); }
   int getLossCount() { return loss_count_; }
   int getId() { return id_; }
+  void incrementLossCount() { loss_count_++; }
 
 private:
   // filter

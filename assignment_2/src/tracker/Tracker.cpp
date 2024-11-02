@@ -53,59 +53,69 @@ void Tracker::addTracks(
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);
 }
 
+
+#define COPILOT // CHATGPT
+
+#ifdef COPILOT
 void Tracker::dataAssociation(
 	std::vector<bool> 				&associated_detections, 
 	const std::vector<double> &centroids_x, 
 	const std::vector<double> &centroids_y
 )
 {
-	// Initializes the association vector as false for each detection
-	associated_detections.assign(centroids_x.size(), false);
-
-	// Clean the list of previous associations
+	associated_detections.assign(centroids_x.size(), false); 
 	associated_track_det_ids_.clear();
 
-  for (size_t i = 0; i < centroids_x.size(); ++i)
+	// For each tracklet, search for the nearest detection not yet associated.
+	for (size_t i = 0; i < tracks_.size(); i++) 
 	{
- 		double min_distance = std::numeric_limits<double>::max(); 
+		Tracklet &track = tracks_[i]; 
+		
+		// Skip tracklets with too much uncertainty
+		if (track.getXCovariance() > covariance_threshold || 
+				track.getYCovariance() > covariance_threshold)
+		{
+			continue; 
+		}
+
+		double min_distance = std::numeric_limits<double>::max(); 
 		int best_match = -1;
 
-		for (size_t j = 0; j < tracks_.size(); ++j)
+		// For each detection
+		for (size_t j = 0; j < centroids_x.size(); ++j) 
 		{
-			// If it is already associated, move on to the next
 			if (associated_detections[j]) 
-				continue; 
+				continue;
 
-			// Calculate the Euclidean distance 
-			Tracklet& track = tracks_[j];
-			double dx = centroids_x[i] - track.getX(); 
-			double dy = centroids_y[i] - track.getY(); 
-			double distance = std::sqrt(dx*dx + dy*dy);
-
-			// Check if it is the best match 
-			if (distance < min_distance) 
+			// The Euclidean distance is calculated and compared with the distance_threshold_. 
+			// If the detection is close enough and has the smallest distance found so far, 
+			// it is considered as the "best match"
+			double dx = centroids_x[j] - track.getX(); 
+			double dy = centroids_y[j] - track.getY(); 
+			double distance = std::sqrt(dx * dx + dy * dy); 
+			if (distance < min_distance && distance < distance_threshold_) 
 			{ 
 				min_distance = distance; 
-				best_match = j;
+				best_match = j; 
 			}
 		}
 
-		// If we found a Tracklet close enough
-		if (best_match != -1 && min_distance < distance_threshold_) 
+		// If best_match is found (i.e., a detection meets the distance criterion)
+		if (best_match != -1) 
 		{ 
-			// Associates tracking with the nearest Tracklet
-    	associated_detections[i] = true;
+			// Mark as associated in associated_detections
+			associated_detections[best_match] = true; 
 
-			// Update the Tracklet with the new detection location
-    	tracks_[best_match].update(centroids_x[i], centroids_y[i], true);
+			// Save in associated_track_det_ids_ to update current associations.
+			associated_track_det_ids_.emplace_back(i, best_match); 
 
-			// Add association to the list (optional, to keep track of associations)
-    	associated_track_det_ids_.emplace_back(best_match, i);
-		} 
+			// Call track.update() with the detection coordinates to update the tracklet with the new location.
+			track.update(centroids_x[best_match], centroids_y[best_match], true);
+		}
 		else
-		{ 
-			// No Tracklet is close enough for an association
-			associated_detections[i] = false; // Leave detection unassociated
+		{
+			// No association found; increments the tracklet loss counter
+			track.incrementLossCount();
 		}
 	}
 }
