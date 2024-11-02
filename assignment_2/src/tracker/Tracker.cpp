@@ -54,9 +54,6 @@ void Tracker::addTracks(
 }
 
 
-#define COPILOT // CHATGPT
-
-#ifdef COPILOT
 void Tracker::dataAssociation(
 	std::vector<bool> 				&associated_detections, 
 	const std::vector<double> &centroids_x, 
