@@ -55,7 +55,7 @@ int main()
 
 		// render pointcloud and boxes
 		renderer.renderPointCloud(cloud, "pointCloud", color);
-		for (uint64_t i = 0; i < boxes.size(); ++i)
+		for (size_t i = 0; i < boxes.size(); ++i)
 			renderer.renderBox(boxes[i], i);
 
 		// Call the tracker on the detected clusters

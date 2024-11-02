@@ -1,4 +1,5 @@
 #include "tracker/Tracker.h"
+#include <iostream>
 
 Tracker::Tracker()
 	: cur_id_{ 0 },
@@ -24,17 +25,21 @@ Tracker::Tracker()
 
 void Tracker::removeTracks()
 {
+	if (tracks_.empty()) 
+		return;
+
 	// We invert the tracks_ vector to avoid iterator invalidation problems when we delete elements.
-  for (size_t i = tracks_.size() - 1; i >= 0; i--)
+  for (size_t i = tracks_.size(); i > 0; i--)
 	{
-		auto& track = tracks_[i];
-    if (
-			track.getLossCount() > loss_threshold || 
-			track.getXCovariance() > covariance_threshold || 
-			track.getYCovariance() > covariance_threshold
-		)
+		auto& track = tracks_[i - 1];
+    if (track.getLossCount() > loss_threshold || 
+				track.getXCovariance() > covariance_threshold || 
+				track.getYCovariance() > covariance_threshold)
 		{
-      tracks_.erase(tracks_.begin() + i);
+			std::cout << "Removing Tracklet ID " << track.getId() 
+								<< " due to excessive loss count or uncertainty." 
+								<< std::endl;
+      tracks_.erase(tracks_.begin() + (i - 1));
     }
   }
 }
@@ -49,8 +54,15 @@ void Tracker::addTracks(
 	// If it is false, it means that the detection is not associated with any existing track, 
 	// so a new Tracklet will be created.
 	for (size_t i = 0; i < associated_detections.size(); i++)
+	{
 		if (!associated_detections[i])
+		{
+			std::cout << "Creating new Tracklet for detection at (" 
+								<< centroids_x[i] << ", " << centroids_y[i] << ")" 
+								<< std::endl;
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);
+		}
+	}
 }
 
 void Tracker::dataAssociation(
@@ -108,11 +120,6 @@ void Tracker::dataAssociation(
 			// Call track.update() with the detection coordinates to update the tracklet with the new location.
 			track.update(centroids_x[best_match], centroids_y[best_match], true);
 		}
-		else
-		{
-			// No association found; increments the tracklet loss counter
-			track.incrementLossCount();
-		}
 	}
 }
 
@@ -122,6 +129,8 @@ void Tracker::track(
   bool lidarStatus
 )
 {
+	std::cout << "Starting tracking cycle..." << std::endl;
+
 	// ======================================
 	// 1. Prediction
 	// ======================================
@@ -130,7 +139,15 @@ void Tracker::track(
 	// to update the predicted state.
 	// This helps estimate where the tracklets will be at the next round of detections.
 	for (Tracklet& track : tracks_)
-    track.predict();
+	{
+		std::cout << "Tracklet ID " << track.getId() 
+							<< " pre-prediction state: (" << track.getX() << ", " << track.getY() << ")"
+							<< std::endl;
+		track.predict();
+		std::cout << "Tracklet ID " << track.getId() 
+							<< " post-prediction state: (" << track.getX() << ", " << track.getY() << ")"
+							<< std::endl;
+	}
 	
 	// ======================================
 	// 2. Data Association
@@ -140,6 +157,12 @@ void Tracker::track(
 	// dataAssociation updates associated_detections to indicate which detections have been associated.
 	std::vector<bool> associated_detections;
 	dataAssociation(associated_detections, centroids_x, centroids_y);
+	for (size_t i = 0; i < tracks_.size(); i++) 
+	{ 
+		std::cout << "Tracklet ID " << tracks_[i].getId() << " is associated with detection: " 
+							<< (associated_detections[i] ? "Yes" : "No") 
+							<< std::endl; 
+	}
 
 	// ======================================
 	// 3. Addition of New Tracklets
@@ -156,4 +179,6 @@ void Tracker::track(
 	// Call the removeTracks method to remove tracklets that have too many update failures 
 	// (exceed loss_threshold) or too much uncertainty (exceed covariance_threshold).
 	removeTracks();
+
+	std::cout << "Tracking cycle completed." << std::endl;
 }

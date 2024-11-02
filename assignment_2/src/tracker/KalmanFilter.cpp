@@ -8,12 +8,13 @@ void KalmanFilter::init(double dt)
 	x_ = Eigen::VectorXd(4);
 
   // Initialize the state covariance matrix
-  // P_ = Eigen::MatrixXd(4, 4); 
-  // P_ << 100.0,  0.0,    0.0,    0.0,
-  //       0.0,    100.0,  0.0,    0.0,
-  //       0.0,    0.0,    100.0,  0.0,
-  //       0.0,    0.0,    0.0,    100.0;
-  
+  // Positions (xx, yy): Initialized with 1, indicating low initial uncertainty.
+  // Velocity (vxv_x, vyv_y): Initialized with 1000, indicating higher initial uncertainty on velocity.
+  P_ = Eigen::MatrixXd(4, 4); 
+  P_ << 1.0,  0.0,  0.0,    0.0,
+        0.0,  1.0,  0.0,    0.0,
+        0.0,  0.0,  100.0,  0.0,
+        0.0,  0.0,  0.0,    100.0;
 
   // Initialize the measurement covariance matrix
   R_ = Eigen::MatrixXd(2, 2);
