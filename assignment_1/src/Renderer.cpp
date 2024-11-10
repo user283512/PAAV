@@ -4,7 +4,6 @@
  */
 
 #include <iostream>
-#include <format>
 
 #include <pcl/common/common.h>                  // Per pcl::ModelCoefficients
 #include <pcl/visualization/cloud_viewer.h>     // Per visualizzare le nuvole di punti
@@ -24,7 +23,7 @@ namespace lidar_obstacle_detection
     c_coeff.values[2] = 0.4f;      // radius
 
     char buff[32]{};
-    std::format_to_n(buff, sizeof(buff), "c_{}", id);
+    std::snprintf(buff, sizeof(buff), "c_%d", id);
 
     _viewer->addCircle(c_coeff, buff, 0); 
     _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, 1000, buff);
@@ -40,7 +39,7 @@ namespace lidar_obstacle_detection
   void Renderer::removeShape(int id)
   {
     char buff[32]{};
-    std::format_to_n(buff, sizeof(buff), "c_{}", id);
+    std::snprintf(buff, sizeof(buff), "c_%d", id);
     _viewer->removeShape(buff, 0);
   }
 
@@ -110,7 +109,7 @@ namespace lidar_obstacle_detection
     for(pcl::PointXYZ point : cloud->points)
     {
       char buff[32]{};
-      std::format_to_n(buff, sizeof(buff), "ray{}", _rays_counter);
+      std::snprintf(buff, sizeof(buff), "ray%u", static_cast<uint32_t>(_rays_counter));
 
       _viewer->addLine(
         pcl::PointXYZ(origin.x(), origin.y(), origin.z()), 
@@ -128,7 +127,7 @@ namespace lidar_obstacle_detection
     for(; _rays_counter > 0; _rays_counter--)
     {
       std::fill_n(buff, sizeof(buff), 0);
-      std::format_to_n(buff, sizeof(buff), "ray{}", _rays_counter);
+      std::snprintf(buff, sizeof(buff), "ray%u", static_cast<uint32_t>(_rays_counter));
       _viewer->removeShape(buff);
     }
   }
@@ -175,7 +174,8 @@ namespace lidar_obstacle_detection
     if(opacity > 1.0f) opacity = 1.0f;
     if(opacity < 0.0f) opacity = 0.0f;
 
-    std::string cube = std::format("box{}", id);
+    char cube[32]{};
+    std::snprintf(cube, sizeof(cube), "box%d", id);
     _viewer->addCube(
       box.min_pos.x(), box.max_pos.x(),
       box.min_pos.y(), box.max_pos.y(),
@@ -192,7 +192,8 @@ namespace lidar_obstacle_detection
     _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
     _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
 
-    std::string cubeFill = std::format("boxFill{}", id);
+    char cubeFill[32]{};
+    std::snprintf(cubeFill, sizeof(cubeFill), "boxFill%d", id);
     _viewer->addCube(
       box.min_pos.x(), box.max_pos.x(),
       box.min_pos.y(), box.max_pos.y(),
@@ -214,7 +215,8 @@ namespace lidar_obstacle_detection
     if(opacity > 1.0f) opacity = 1.0f;
     if(opacity < 0.0f) opacity = 0.0f;
 
-    std::string cube = std::format("box{}", id);
+    char cube[32]{};
+    std::snprintf(cube, sizeof(cube), "box%d", id);
     _viewer->addCube(
       box.bbox_transform, 
       box.bbox_quaternion, 
@@ -231,7 +233,8 @@ namespace lidar_obstacle_detection
     _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
     _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
 
-    std::string cubeFill = std::format("boxFill{}", id);
+    char cubeFill[32]{};
+    std::snprintf(cubeFill, sizeof(cubeFill), "boxFill%d", id);
     _viewer->addCube(
       box.bbox_transform, 
       box.bbox_quaternion,

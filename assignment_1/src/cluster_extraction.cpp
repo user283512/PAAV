@@ -25,14 +25,18 @@
 
 #define USE_DATASET_2
 #ifdef USE_DATASET_1
-	#define DATASET "res/dataset_1"
+	#define DATASET "dataset_1"
 #else
-	#define DATASET "res/dataset_2"
+	#define DATASET "dataset_2"
 #endif
+
 
 namespace fs = std::filesystem;
 using namespace lidar_obstacle_detection;
 using my_visited_set_t = std::unordered_set<int>;
+
+static const auto res_dir = fs::current_path().parent_path() / "res/";
+static const auto dataset_dir = res_dir / DATASET;
 
 /**
  * This function sets up the custom kdtree using the point cloud
@@ -343,8 +347,6 @@ static void ProcessAndRenderPointCloud(Renderer& renderer, pcl::PointCloud<pcl::
 
 int main()
 {
-	static const auto dataset_dir = fs::current_path().parent_path() / DATASET;
-
 	Renderer renderer;
 	renderer.InitCamera(CameraAngle::XY);
 	renderer.ClearViewer();
