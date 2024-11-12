@@ -1,10 +1,12 @@
 #ifndef PARTICLE_FILTER_H_
 #define PARTICLE_FILTER_H_
 
+#include <vector>
+
 #include "particle/helper_functions.h"
 
-struct Particle {
-
+struct Particle 
+{
 	int id;
 	double x; // denotes the longitudinal position (along the direction of travel)
 	double y; // represents the lateral position
@@ -14,14 +16,17 @@ struct Particle {
 	std::vector<double> sense_x;
 	std::vector<double> sense_y;
 
-	Particle(){x = y = theta = 0.0;}
-	Particle(double x, double y, double theta) : x(x), y(y), theta(theta) { }
+	Particle(double x = 0, double y = 0, double theta = 0) 
+	: x(x), 
+		y(y), 
+		theta(theta)
+	{}
 };
 
 
 
-class ParticleFilter {
-	
+class ParticleFilter
+{
 	// Number of particles to draw
 	int num_particles; 
 	 
@@ -32,7 +37,6 @@ class ParticleFilter {
 	std::vector<double> weights;
 	
 public:
-	
 	// Set of current particles
 	std::vector<Particle> particles;
 
@@ -53,7 +57,7 @@ public:
 	 *   standard deviation of yaw [rad]]
 	 * @param nParticles Number of particles used by the algorithm
 	 */
-	void init(double x, double y, double theta, double std[],int nParticles);
+	void init(double x, double y, double theta, double std[], int nParticles);
 
 		/**
 	 * init Initializes particle filter by randomly distributing the particles 
@@ -62,7 +66,7 @@ public:
 	 *   standard deviation of yaw [rad]]
 	 * @param nParticles Number of particles used by the algorithm
 	 */
-	void init_random(double std[],int nParticles);
+	void init_random(double std[], int nParticles);
 
 
 	/**
@@ -82,7 +86,9 @@ public:
 	 * @param predicted Vector of predicted landmark observations
 	 * @param observations Vector of landmark observations
 	 */
-	void dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations);
+	void dataAssociation(const std::vector<LandmarkObs>& predicted, 
+		std::vector<LandmarkObs>& observations
+	);
 	
 	/**
 	 * updateWeights Updates the weights for each particle based on the likelihood of the 
@@ -92,8 +98,10 @@ public:
 	 * @param observations Vector of landmark observations
 	 * @param map Map class containing map landmarks
 	 */
-	void updateWeights(double std_landmark[], std::vector<LandmarkObs> observations,
-			Map map_landmarks);
+	void updateWeights(double std_landmark[], 
+		const std::vector<LandmarkObs>& observations, 
+		const Map& map_landmarks
+	);
 	
 	/**
 	 * resample Resamples from the updated set of particles to form
@@ -105,20 +113,23 @@ public:
 	 * Set a particles list of associations, along with the associations calculated world x,y coordinates
 	 * This can be a very useful debugging tool to make sure transformations are correct and assocations correctly connected
 	 */
-	Particle SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y);
+	Particle SetAssociations(const Particle& particle, 
+		const std::vector<int>& associations, 
+		const std::vector<double>& sense_x, 
+		const std::vector<double>& sense_y
+	);
 	
-	std::string getAssociations(Particle best);
-	std::string getSenseX(Particle best);
-	std::string getSenseY(Particle best);
+	std::string getAssociations(const Particle& best);
+	std::string getSenseX(const Particle& best);
+	std::string getSenseY(const Particle& best);
 
 	/**
 	 * initialized Returns whether particle filter is initialized yet or not.
 	 */
-	const bool initialized() const {
+	const bool initialized() const 
+	{
 		return is_initialized;
 	}
 };
-
-
 
 #endif /* PARTICLE_FILTER_H_ */

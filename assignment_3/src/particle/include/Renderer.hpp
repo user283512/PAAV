@@ -18,14 +18,12 @@
 
 namespace lidar_obstacle_detection
 {
-
   struct Color
   {
-
     float r, g, b;
 
     Color(float setR, float setG, float setB)
-        : r(setR), g(setG), b(setB)
+      : r(setR), g(setG), b(setB)
     {}
   };
 
@@ -43,7 +41,6 @@ namespace lidar_obstacle_detection
     unsigned long long rays_counter_;
 
   public:
-
     static void setLidarStatus();
 
     static bool getLidarStatus();
@@ -91,7 +88,6 @@ namespace lidar_obstacle_detection
     bool WasViewerStopped() const;
 
     void SpinViewerOnce() const;
-
   };
 }
 

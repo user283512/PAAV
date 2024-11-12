@@ -29,7 +29,7 @@ Academic Year: 2024/2025
 
 * OS requirements:
 	- ROS (the installation command depends on the Linux distribution)SS
-		Example: sudo apt install ros-melodic-desktop-full (this one applies to Ubuntu 18)        
+		Example: sudo apt install ros-melodic-desktop-full (this one applies to Ubuntu 18)
     
 * Instructions to compile the code:
         Open one terminal and run the following command: roscore
