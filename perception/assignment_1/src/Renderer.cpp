@@ -1,309 +1,253 @@
-/**
- * The original author of the rendering code is Aaron Brown (https://github.com/awbrown90).
- * His code has been slightly modified to make it more structured.
- */
 
-#include <iostream>
-
-#include <pcl/common/common.h>                  // Per pcl::ModelCoefficients
-#include <pcl/visualization/cloud_viewer.h>     // Per visualizzare le nuvole di punti
-#include <pcl/visualization/point_cloud_color_handlers.h> // Per color handler
-#include <pcl/visualization/pcl_visualizer.h>   // Per shape rendering properties
+//
+// The original author of the rendering code is Aaron Brown (https://github.com/awbrown90).
+// His code has been slightly modified to make it more structured.
+//
 
 #include "../include/Renderer.hpp"
 
 namespace lidar_obstacle_detection
 {
+
   void Renderer::addCircle(float centroid_x, float centroid_y, int id)
   {
+
     pcl::ModelCoefficients c_coeff;
-    c_coeff.values.resize(3);      // We need 3 values
+    c_coeff.values.resize(3); // We need 3 values
     c_coeff.values[0] = centroid_x;
     c_coeff.values[1] = centroid_y;
-    c_coeff.values[2] = 0.4f;      // radius
+    c_coeff.values[2] = 0.4; // radius
 
-    char buff[32]{};
-    std::snprintf(buff, sizeof(buff), "c_%d", id);
+    viewer_->addCircle(c_coeff, "c_" + std::to_string(id), 0);
 
-    _viewer->addCircle(c_coeff, buff, 0); 
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, 1000, buff);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, buff);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 10000.0, buff);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, 1000, "c_" + std::to_string(id));
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "c_" + std::to_string(id));
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 10000.0, "c_" + std::to_string(id));
   }
 
-  void Renderer::addText(float centroid_x, float centroid_y, float centroid_z, std::string_view id)
+  void Renderer::addText(float centroid_x, float centroid_y, float centroid_z, const std::string &id)
   {
-    _viewer->addText3D(id.data(), pcl::PointXYZ(centroid_x, centroid_y, 0), 0.5f, 255, 0, 0, "", 0);
+
+    viewer_->addText3D(id, pcl::PointXYZ(centroid_x, centroid_y, 0), 0.5, 255, 0, 0, "", 0);
   }
 
   void Renderer::removeShape(int id)
   {
-    char buff[32]{};
-    std::snprintf(buff, sizeof(buff), "c_%d", id);
-    _viewer->removeShape(buff, 0);
+    viewer_->removeShape("c_" + std::to_string(id), 0);
   }
 
-  void Renderer::keyboardCallback(const pcl::visualization::KeyboardEvent &event) 
+  void Renderer::keyboardCallback(const pcl::visualization::KeyboardEvent &event)
   {
-    if(event.getKeySym() == "v" && event.keyUp() )
-	    setLidarStatus();
+    if (event.getKeySym() == "v" && event.keyUp())
+    {
+
+      setLidarStatus();
+    }
   }
-  
+
   void Renderer::setLidarStatus()
   {
-    lidarActivated^= true;
+    lidarActivated ^= true;
   }
 
   bool Renderer::getLidarStatus()
   {
+
     return lidarActivated;
   }
 
   void Renderer::RenderHighway()
   {
-    /* units in meters */ 
-    float roadLength = 50.0f;
-    float roadWidth = 12.0f;
-    float roadHeight = 0.2f;
 
-    _viewer->addCube(
-      -roadLength/2.f, roadLength/2.f, 
-      -roadWidth/2.f, roadWidth/2.f, 
-      -roadHeight, 0.0f, 
-      0.2f, 0.2f, 0.2f, 
-      "highwayPavement"
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, 
-      "highwayPavement"
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_COLOR, 
-      0.2f, 0.2f, 0.2f,
-      "highwayPavement"
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_OPACITY, 
-      1.0f, 
-      "highwayPavement"
-    );
+    // units in meters
+    float roadLength = 50.0;
+    float roadWidth = 12.0;
+    float roadHeight = 0.2;
 
-    _viewer->addLine(
-      pcl::PointXYZ(-roadLength / 2,-roadWidth / 6, 0.01f), 
-      pcl::PointXYZ(roadLength / 2, -roadWidth / 6, 0.01f),
-      1.0f, 1.0f, 0.0f,
-      "line1"
-    );
+    viewer_->addCube(-roadLength / 2., roadLength / 2., -roadWidth / 2., roadWidth / 2., -roadHeight,
+                     0.0, 0.2, 0.2, 0.2, "highwayPavement");
 
-    _viewer->addLine(
-      pcl::PointXYZ(-roadLength / 2, roadWidth / 6, 0.01f),
-      pcl::PointXYZ(roadLength / 2, roadWidth / 6, 0.01f),
-      1.0f, 1.0f, 0.0f, 
-      "line2"
-    );
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "highwayPavement");
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.2, 0.2, 0.2, "highwayPavement");
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0, "highwayPavement");
+
+    viewer_->addLine(pcl::PointXYZ(-roadLength / 2, -roadWidth / 6, 0.01), pcl::PointXYZ(roadLength / 2, -roadWidth / 6, 0.01),
+                     1.0, 1.0, 0.0, "line1");
+
+    viewer_->addLine(pcl::PointXYZ(-roadLength / 2, roadWidth / 6, 0.01),
+                     pcl::PointXYZ(roadLength / 2, roadWidth / 6, 0.01), 1.0, 1.0, 0.0, "line2");
   }
 
-  void Renderer::RenderRays(const Eigen::Vector3f& origin, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+  void Renderer::RenderRays(const Eigen::Vector3f &origin, const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
   {
-    for(pcl::PointXYZ point : cloud->points)
-    {
-      char buff[32]{};
-      std::snprintf(buff, sizeof(buff), "ray%u", static_cast<uint32_t>(_rays_counter));
 
-      _viewer->addLine(
-        pcl::PointXYZ(origin.x(), origin.y(), origin.z()), 
-        point,
-        1.0f, 0.0f, 0.0f, 
-        buff
-      );
-      ++_rays_counter;
+    for (pcl::PointXYZ point : cloud->points)
+    {
+      viewer_->addLine(pcl::PointXYZ(origin.x(), origin.y(), origin.z()), point,
+                       1.0, 0.0, 0.0, "ray" + std::to_string(rays_counter_));
+      ++rays_counter_;
     }
   }
 
   void Renderer::ClearRays()
   {
-    char buff[32]{};
-    for(; _rays_counter > 0; _rays_counter--)
+    while (rays_counter_-- > 0)
     {
-      std::fill_n(buff, sizeof(buff), 0);
-      std::snprintf(buff, sizeof(buff), "ray%u", static_cast<uint32_t>(_rays_counter));
-      _viewer->removeShape(buff);
+      viewer_->removeShape("ray" + std::to_string(rays_counter_));
     }
   }
 
   void Renderer::RenderPointCloud(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, 
-    std::string_view name, 
-    const Color& color
-  )
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, const std::string &name, const Color &color)
   {
-    _viewer->addPointCloud<pcl::PointXYZ>(cloud, name.data());
-    _viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name.data());
-    _viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name.data());
+
+    viewer_->addPointCloud<pcl::PointXYZ>(cloud, name);
+    viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name);
+    viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name);
   }
 
   void Renderer::RenderPointCloud(
-    const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, 
-    std::string_view name, 
-    const Color& color
-  )
+      const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud, const std::string &name, const Color &color)
   {
-    if(color.r == -1)
+
+    if (color.r == -1)
     {
-      /* Select color based off of cloud intensity */
+      // Select color based off of cloud intensity
       pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity_distribution(cloud, "intensity");
-      _viewer->addPointCloud<pcl::PointXYZI>(cloud, intensity_distribution, name.data());
+      viewer_->addPointCloud<pcl::PointXYZI>(cloud, intensity_distribution, name);
     }
     else
     {
-      /* Select color based off input value */ 
-      _viewer->addPointCloud<pcl::PointXYZI>(cloud, name.data());
-      _viewer->setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_COLOR, 
-        color.r, color.g, color.b, 
-        name.data());
+      // Select color based off input value
+      viewer_->addPointCloud<pcl::PointXYZI>(cloud, name);
+      viewer_->setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name);
     }
 
-    _viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name.data());
+    viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
   }
 
-  /* Draw wire frame box with filled transparent color */
-  void Renderer::RenderBox(const Box& box, int id, const Color& color, float opacity)
+  // Draw wire frame box with filled transparent color
+  void Renderer::RenderBox(const Box &box, const int id, const Color &color, float opacity)
   {
-    if(opacity > 1.0f) opacity = 1.0f;
-    if(opacity < 0.0f) opacity = 0.0f;
+    if (opacity > 1.0)
+      opacity = 1.0;
+    if (opacity < 0.0)
+      opacity = 0.0;
 
-    char cube[32]{};
-    std::snprintf(cube, sizeof(cube), "box%d", id);
-    _viewer->addCube(
-      box.min_pos.x(), box.max_pos.x(),
-      box.min_pos.y(), box.max_pos.y(),
-      box.min_pos.z(), box.max_pos.z(),
-      color.r, color.g, color.b, 
-      cube
-    );
+    std::string cube = "box" + std::to_string(id);
 
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, 
-      cube
-    );
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
+    viewer_->addCube(box.x_min, box.x_max, box.y_min, box.y_max, box.z_min, box.z_max, color.r, color.g, color.b, cube);
 
-    char cubeFill[32]{};
-    std::snprintf(cubeFill, sizeof(cubeFill), "boxFill%d", id);
-    _viewer->addCube(
-      box.min_pos.x(), box.max_pos.x(),
-      box.min_pos.y(), box.max_pos.y(),
-      box.min_pos.z(), box.max_pos.z(),
-      color.r, color.g, color.b, 
-      cubeFill
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, 
-      cubeFill
-    );
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cubeFill);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3f, cubeFill);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, cube);
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
+
+    std::string cubeFill = "boxFill" + std::to_string(id);
+
+    viewer_->addCube(box.x_min, box.x_max, box.y_min, box.y_max, box.z_min, box.z_max,
+                     color.r, color.g, color.b, cubeFill);
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, cubeFill);
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cubeFill);
+
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3, cubeFill);
   }
 
-  void Renderer::RenderBox(const BoxQ& box, int id, const Color& color, float opacity)
+  void Renderer::RenderBox(const BoxQ &box, const int id, const Color &color, float opacity)
   {
-    if(opacity > 1.0f) opacity = 1.0f;
-    if(opacity < 0.0f) opacity = 0.0f;
+    if (opacity > 1.0)
+      opacity = 1.0;
+    if (opacity < 0.0)
+      opacity = 0.0;
 
-    char cube[32]{};
-    std::snprintf(cube, sizeof(cube), "box%d", id);
-    _viewer->addCube(
-      box.bbox_transform, 
-      box.bbox_quaternion, 
-      box.cube_length, 
-      box.cube_width, 
-      box.cube_height, 
-      cube
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, 
-      cube
-    );
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
+    std::string cube = "box" + std::to_string(id);
+    viewer_->addCube(box.bbox_transform, box.bbox_quaternion, box.cube_length, box.cube_width, box.cube_height, cube);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, cube);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cube);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity, cube);
 
-    char cubeFill[32]{};
-    std::snprintf(cubeFill, sizeof(cubeFill), "boxFill%d", id);
-    _viewer->addCube(
-      box.bbox_transform, 
-      box.bbox_quaternion,
-      box.cube_length, 
-      box.cube_width, 
-      box.cube_height, 
-      cubeFill
-    );
-    _viewer->setShapeRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
-      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, 
-      cubeFill
-    );
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cubeFill);
-    _viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3f, cubeFill);
+    std::string cubeFill = "boxFill" + std::to_string(id);
+    viewer_->addCube(box.bbox_transform, box.bbox_quaternion,
+                     box.cube_length, box.cube_width, box.cube_height, cubeFill);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+                                         pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, cubeFill);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cubeFill);
+    viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3, cubeFill);
   }
 
   void Renderer::InitCamera(CameraAngle view_angle)
   {
-    _viewer->setBackgroundColor(0, 0, 0);
 
-    /* Set camera position and angle */
-    _viewer->initCameraParameters();
+    viewer_->setBackgroundColor(0, 0, 0);
 
-    /* Distance away in meters */ 
+    // set camera position and angle
+    viewer_->initCameraParameters();
+    // distance away in meters
     int distance = 16;
 
-    switch(view_angle)
+    switch (view_angle)
     {
-      case CameraAngle::XY:
-        _viewer->setCameraPosition(-distance, -distance, distance, 1, 1, 0);
-        break;
-
-      case CameraAngle::TopDown:
-        _viewer->setCameraPosition(0, 0, distance, 1, 0, 1);
-        break;
-
-      case CameraAngle::Side:
-        _viewer->setCameraPosition(0, -distance, 0, 0, 0, 1);
-        break;
-
-      case CameraAngle::FPS:
-        _viewer->setCameraPosition(-10, 0, 0, 0, 0, 1);
-        break;
-
-      default:
-        throw std::logic_error("unknown CameraAngle");
+    case CameraAngle::XY:
+    {
+      viewer_->setCameraPosition(-distance, -distance, distance, 1, 1, 0);
+      break;
+    }
+    case CameraAngle::TopDown:
+    {
+      viewer_->setCameraPosition(0, 0, distance, 1, 0, 1);
+      break;
+    }
+    case CameraAngle::Side:
+    {
+      viewer_->setCameraPosition(0, -distance, 0, 0, 0, 1);
+      break;
+    }
+    case CameraAngle::FPS:
+    {
+      viewer_->setCameraPosition(-10, 0, 0, 0, 0, 1);
+      break;
+    }
+    default:
+    {
+      throw std::logic_error("unknown CameraAngle");
+    }
     }
 
-    if(view_angle != CameraAngle::FPS)
-      _viewer->addCoordinateSystem(1.0f);
-
-	  _viewer->registerKeyboardCallback(keyboardCallback);
+    if (view_angle != CameraAngle::FPS)
+    {
+      viewer_->addCoordinateSystem(1.0);
+    }
+    viewer_->registerKeyboardCallback(keyboardCallback);
     lidarActivated = true;
   }
 
   void Renderer::ClearViewer()
   {
-    _viewer->removeAllPointClouds();
-    _viewer->removeAllShapes();
+    viewer_->removeAllPointClouds();
+    viewer_->removeAllShapes();
   }
 
   bool Renderer::WasViewerStopped() const
   {
-    return _viewer->wasStopped();
+    return viewer_->wasStopped();
   }
 
-  void Renderer::SpinViewerOnce() const
+  Renderer::Renderer() : viewer_{new pcl::visualization::PCLVisualizer("3D Viewer")}, rays_counter_{0}
   {
-    _viewer->spinOnce();
   }
-};
+
+  void Renderer::SpinViewerOnce(int time) const
+  {
+    viewer_->spinOnce(time);
+  }
+}

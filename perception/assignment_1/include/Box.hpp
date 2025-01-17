@@ -1,5 +1,4 @@
-#include <Eigen/Dense>      // Eigen::Vector3f
-#include <Eigen/Geometry>   // Eigen::Quaternionf
+#include <Eigen/Geometry>
 
 namespace lidar_obstacle_detection
 {
@@ -14,8 +13,11 @@ namespace lidar_obstacle_detection
 
   struct Box
   {
-    Eigen::Vector3f min_pos;
-    Eigen::Vector3f max_pos;
+    float x_min;
+    float y_min;
+    float z_min;
+    float x_max;
+    float y_max;
+    float z_max;
   };
 }
-

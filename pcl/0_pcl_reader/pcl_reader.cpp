@@ -8,19 +8,6 @@
 #include <pcl/visualization/cloud_viewer.h>
 namespace fs = std::filesystem;
 
-int user_data = 0;
-void viewerPsycho(pcl::visualization::PCLVisualizer &viewer)
-{
-	static unsigned count = 0;
-	std::stringstream ss;
-	ss << "Once per viewer loop: " << count++;
-	viewer.removeShape("text", 0);
-	viewer.addText(ss.str(), 200, 300, "text", 0);
-
-	// FIXME: possible race condition here:
-	user_data++;
-}
-
 int main(int argc, char **argv)
 {
 	// Controllo argomenti
@@ -45,7 +32,6 @@ int main(int argc, char **argv)
 	viewer.setBackgroundColor(0, 0, 0);
 	viewer.addPointCloud<pcl::PointXYZ>(cloud, "cloud");
 	viewer.addCoordinateSystem(1.0);
-	// Configurazione della camera
 	viewer.initCameraParameters();
 	viewer.setCameraPosition(0, 0, -3, 0, 1, 0);
 
