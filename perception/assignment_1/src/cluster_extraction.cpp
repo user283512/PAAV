@@ -5,6 +5,7 @@
 #include <chrono>
 #include <unordered_set>
 #include <vector>
+#include <array>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
@@ -120,18 +121,22 @@ std::vector<pcl::PointIndices> euclideanCluster(
 }
 
 // TODO (mandatory): complete this function
-void ProcessAndRenderPointCloud(Renderer &renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
+void ProcessAndRenderPointCloud(Renderer &renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
-	// TODO: 1) Downsample the dataset
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>());
+
+	// TODO: 1) Downsample the dataset with VoxelGrid
+	pcl::VoxelGrid<pcl::PointXYZ> voxel_filter;
+	voxel_filter.setInputCloud(cloud);
+	voxel_filter.setLeafSize(0.1f, 0.1f, 0.1f);
+	voxel_filter.filter(*cloud_filtered);
 
 	// 2) here we crop the points that are far away from us, in which we are not interested
-	pcl::CropBox<pcl::PointXYZ> cb(true);
-	cb.setInputCloud(cloud_filtered);
-	cb.setMin(Eigen::Vector4f(-20, -6, -2, 1));
-	cb.setMax(Eigen::Vector4f(30, 7, 5, 1));
-	cb.filter(*cloud_filtered);
+	pcl::CropBox<pcl::PointXYZ> crob_filter(true);
+	crob_filter.setInputCloud(cloud_filtered);
+	crob_filter.setMin(Eigen::Vector4f(-20, -6, -2, 1));
+	crob_filter.setMax(Eigen::Vector4f(30, 7, 5, 1));
+	crob_filter.filter(*cloud_filtered);
 
 	// TODO: 3) Segmentation and apply RANSAC
 
@@ -139,8 +144,9 @@ void ProcessAndRenderPointCloud(Renderer &renderer, pcl::PointCloud<pcl::PointXY
 
 	// TODO: 5) Create the KDTree and the vector of PointIndices
 
-	// TODO: 6) Set the spatial tolerance for new cluster candidates (pay attention to the tolerance!!!)
-	std::vector<pcl::PointIndices> cluster_indices;
+	// TODO: 6) Set the spatial tolerance for new cluster candidates 
+	// (pay attention to the tolerance!!!)
+	
 
 #ifdef USE_PCL_LIBRARY
 
@@ -154,13 +160,19 @@ void ProcessAndRenderPointCloud(Renderer &renderer, pcl::PointCloud<pcl::PointXY
 	cluster_indices = euclideanCluster(cloud_filtered, &treeM, clusterTolerance, setMinClusterSize, setMaxClusterSize);
 #endif
 
-	std::vector<Color> colors = {Color(1, 0, 0), Color(1, 1, 0), Color(0, 0, 1), Color(1, 0, 1), Color(0, 1, 1)};
+	static const std::array<Color, 5> colors = {
+		Color(1, 0, 0),
+		Color(1, 1, 0),
+		Color(0, 0, 1),
+		Color(1, 0, 1),
+		Color(0, 1, 1)
+	}
 
-	/**Now we extracted the clusters out of our point cloud and saved the indices in cluster_indices.
-
-	To separate each cluster out of the vector<PointIndices> we have to iterate through cluster_indices, create a new PointCloud for each entry and write all points of the current cluster in the PointCloud.
-	Compute euclidean distance
-	**/
+	// Now we extracted the clusters out of our point cloud and saved the indices in cluster_indices.
+	// To separate each cluster out of the vector<PointIndices> we have to iterate through
+	// cluster_indices, create a new PointCloud for each entry and write all points of the
+	// current cluster in the PointCloud.
+	// Compute euclidean distance
 	int j = 0;
 	int clusterId = 0;
 	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
@@ -232,7 +244,7 @@ int main(int argc, char *argv[])
 		reader.read(stream_it->string(), *input_cloud);
 		auto startTime = std::chrono::steady_clock::now();
 
-		//ProcessAndRenderPointCloud(renderer, input_cloud);
+		// ProcessAndRenderPointCloud(renderer, input_cloud);
 		auto endTime = std::chrono::steady_clock::now();
 		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 		std::cout << elapsedTime << "\n";
