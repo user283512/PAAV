@@ -13,11 +13,8 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (cluster_extraction 
-  src/cluster_extraction.cpp 
-  src/Renderer.cpp 
-  src/tree_utilities.cpp
-)
+file(GLOB SOURCES "src/*.cpp")
+add_executable(cluster_extraction ${SOURCES})
 
 # Aggiungi l'eseguibile e collega le librerie PCL
 target_link_libraries (cluster_extraction ${PCL_LIBRARIES})

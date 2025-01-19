@@ -81,7 +81,7 @@ namespace lidar_obstacle_detection
                      pcl::PointXYZ(roadLength / 2, roadWidth / 6, 0.01), 1.0, 1.0, 0.0, "line2");
   }
 
-  void Renderer::RenderRays(const Eigen::Vector3f &origin, const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
+  void Renderer::RenderRays(const Eigen::Vector3f &origin, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
   {
 
     for (pcl::PointXYZ point : cloud->points)
@@ -101,7 +101,7 @@ namespace lidar_obstacle_detection
   }
 
   void Renderer::RenderPointCloud(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, const std::string &name, const Color &color)
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const std::string &name, const Color &color)
   {
 
     viewer_->addPointCloud<pcl::PointXYZ>(cloud, name);
@@ -110,7 +110,7 @@ namespace lidar_obstacle_detection
   }
 
   void Renderer::RenderPointCloud(
-      const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud, const std::string &name, const Color &color)
+      const pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, const std::string &name, const Color &color)
   {
 
     if (color.r == -1)
