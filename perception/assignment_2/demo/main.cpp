@@ -6,24 +6,15 @@
 #include "tracker/Tracker.h"
 #include "CloudManager.h"
 
-// Frequency of the thread dedicated to process the point cloud
-static costexpr int64_t freq = 100;	
+namespace fs = std::filesystem;
 
-int main(int argc, char *argv[])
+int main()
 {
-	// if (argc != 2)
-	// {
-	// 	std::cerr << "2 args required: <dataset_directory>\n";
-	// 	return -1;
-	// }
-	
-	std::string log_path = "log"; // TODO: define the path to the log folder
-
-	std::ifstream dataFile(log_path, std::ios::in | std::ios::binary);
-	if (!dataFile)
+	static const fs::path res_dir = fs::current_path() / "res";
+	if (!fs::exists(res_dir))
 	{
-		std::cerr << "ERROR: The file '" << log_path << "' does not exist. Exiting.\n";
-		return 1;
+		std::cerr << "Invalid path: " << res_dir << std::endl;
+		return -1;
 	}
 
 	// Init renderer
@@ -34,8 +25,11 @@ int main(int argc, char *argv[])
 	// Instantiate the tracker
 	Tracker tracker;
 
+	// Frequency of the thread dedicated to process the point cloud
+	constexpr int64_t freq = 100;
+
 	// Spawn the thread that process the point cloud and performs the clustering
-	CloudManager lidar_cloud(log_path, freq, renderer);
+	CloudManager lidar_cloud(res_dir, freq, renderer);
 	std::thread t(&CloudManager::startCloudManager, &lidar_cloud);
 
 	while (true)
