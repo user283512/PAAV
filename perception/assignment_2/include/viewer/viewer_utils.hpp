@@ -23,7 +23,6 @@ namespace viewer
 
   struct Color
   {
-
     float r, g, b;
 
     Color(float setR, float setG, float setB)

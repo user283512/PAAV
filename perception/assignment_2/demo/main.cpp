@@ -1,26 +1,28 @@
 #include <iostream>
-#include <string>
 #include <fstream>
 #include <filesystem>
-#include <thread>
-#include <cstdint>
 
 #include "viewer/Renderer.h"
 #include "tracker/Tracker.h"
 #include "CloudManager.h"
 
-namespace fs = std::filesystem;
-static const fs::path dir_res_path = fs::current_path().parent_path() / "res";
-static const fs::path dir_log_path = dir_res_path / "log";
-static const std::string dir_log_string = dir_log_path.string();
-static constexpr int64_t freq = 100;  // Frequency of the thread dedicated to process the point cloud
+// Frequency of the thread dedicated to process the point cloud
+static costexpr int64_t freq = 100;	
 
-int main()
+int main(int argc, char *argv[])
 {
-	std::ifstream dataFile(dir_log_string, std::ios::in | std::ios::binary);
+	// if (argc != 2)
+	// {
+	// 	std::cerr << "2 args required: <dataset_directory>\n";
+	// 	return -1;
+	// }
+	
+	std::string log_path = "log"; // TODO: define the path to the log folder
+
+	std::ifstream dataFile(log_path, std::ios::in | std::ios::binary);
 	if (!dataFile)
 	{
-		std::cerr << "Error on opening file " << dir_log_string << "\n";
+		std::cerr << "ERROR: The file '" << log_path << "' does not exist. Exiting.\n";
 		return 1;
 	}
 
@@ -33,7 +35,7 @@ int main()
 	Tracker tracker;
 
 	// Spawn the thread that process the point cloud and performs the clustering
-	CloudManager lidar_cloud(dir_log_string, freq, renderer);
+	CloudManager lidar_cloud(log_path, freq, renderer);
 	std::thread t(&CloudManager::startCloudManager, &lidar_cloud);
 
 	while (true)
@@ -41,7 +43,8 @@ int main()
 		// Clear the render
 		renderer.clearViewer();
 
-		while (!lidar_cloud.new_measurement) { } // wait for new data (we will execute the following code each 100ms)
+		while (!lidar_cloud.new_measurement)
+			; // wait for new data (we will execute the following code each 100ms)
 
 		// fetch data
 		lidar_cloud.mtxData.lock();

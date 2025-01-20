@@ -25,7 +25,6 @@ namespace viewer
 
   void Renderer::addText(float centroid_x, float centroid_y, int id)
   {
-
     viewer_->addText3D(std::to_string(id), pcl::PointXYZ(centroid_x, centroid_y, 0), 0.3, 255, 255, 255, "", 0);
   }
 
@@ -61,10 +60,9 @@ namespace viewer
   }
 
   void Renderer::renderPointCloud(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, 
-    const std::string &name, 
-    const Color &color
-  )
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+      const std::string &name,
+      Color color)
   {
     viewer_->addPointCloud<pcl::PointXYZ>(cloud, name);
     viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name);
@@ -72,10 +70,9 @@ namespace viewer
   }
 
   void Renderer::renderPointCloud(
-    const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud, 
-    const std::string &name, 
-    const Color &color
-  )
+      pcl::PointCloud<pcl::PointXYZI>::Ptr cloud,
+      const std::string &name,
+      Color color)
   {
     if (color.r == -1)
     {
@@ -88,17 +85,18 @@ namespace viewer
       // Select color based off input value
       viewer_->addPointCloud<pcl::PointXYZI>(cloud, name);
       viewer_->setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_COLOR, 
-        color.r, color.g, color.b, 
-        name
-      );
+          pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name);
     }
 
     viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
   }
 
   // Draw wire frame box with filled transparent color
-  void Renderer::renderBox(const Box &box, const int id, const Color &color, float opacity)
+  void Renderer::renderBox(
+      const Box &box,
+      const int id,
+      Color color,
+      float opacity)
   {
     if (opacity > 1.0)
       opacity = 1.0;
@@ -129,7 +127,11 @@ namespace viewer
     viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity * 0.3, cubeFill);
   }
 
-  void Renderer::renderBox(const BoxQ &box, const int id, const Color &color, float opacity)
+  void Renderer::renderBox(
+      const BoxQ &box,
+      const int id,
+      Color color,
+      float opacity)
   {
     if (opacity > 1.0)
       opacity = 1.0;
@@ -154,7 +156,6 @@ namespace viewer
 
   void Renderer::initCamera(CameraAngle view_angle)
   {
-
     viewer_->setBackgroundColor(0, 0, 0);
 
     // set camera position and angle
@@ -210,7 +211,8 @@ namespace viewer
     return viewer_->wasStopped();
   }
 
-  Renderer::Renderer() : viewer_{new pcl::visualization::PCLVisualizer("3D Viewer")}, rays_counter_{0}
+  Renderer::Renderer()
+      : viewer_{new pcl::visualization::PCLVisualizer("3D Viewer")}, rays_counter_{0}
   {
   }
 

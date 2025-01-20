@@ -13,6 +13,10 @@ Tracklet::Tracklet(int idTrack, double x, double y)
   loss_count_ = 0;
 }
 
+Tracklet::~Tracklet()
+{
+}
+
 // Predict a single measurement
 void Tracklet::predict()
 {
@@ -23,12 +27,13 @@ void Tracklet::predict()
 // Update with a real measurement
 void Tracklet::update(double x, double y, bool lidarStatus)
 {
-  if (!lidarStatus) 
-    return;
+  Eigen::VectorXd raw_measurements_ = Eigen::VectorXd(2);
 
   // measurement update
-  Eigen::VectorXd raw_measurements_ = Eigen::VectorXd(2);
-  raw_measurements_ << x, y;
-  kf_.update(raw_measurements_);
-  loss_count_ = 0;
+  if (lidarStatus)
+  {
+    raw_measurements_ << x, y;
+    kf_.update(raw_measurements_);
+    loss_count_ = 0;
+  }
 }

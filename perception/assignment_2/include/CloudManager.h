@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
-#include <string>
+#include <filesystem>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/extract_indices.h>
@@ -21,16 +21,20 @@
 class CloudManager
 {
 public:
-  CloudManager(const std::string &path, int64_t freq, viewer::Renderer &renderer);
+  CloudManager(
+      const std::filesystem::path &path,
+      int64_t freq,
+      viewer::Renderer &renderer);
+
   void startCloudManager();
 
   // getters
   pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud() { return cloud_; }
   std::vector<viewer::Box> getBoxes() { return boxes_; }
   viewer::Color getColor() { return color_; }
-  std::vector<double> getCentroidsX() { return centroids_x_; }
-  std::vector<double> getCentroidsY() { return centroids_y_; }
-  std::vector<double> getCentroidsZ() { return centroids_z_; }
+  const std::vector<double> &getCentroidsX() { return centroids_x_; }
+  const std::vector<double> &getCentroidsY() { return centroids_y_; }
+  const std::vector<double> &getCentroidsZ() { return centroids_z_; }
 
   // data handlers
   bool new_measurement = false;
@@ -38,7 +42,7 @@ public:
 
 private:
   // process the pointcloud and perform clustering
-  void processAndRenderPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
+  void processAndRenderPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
 
   // cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;

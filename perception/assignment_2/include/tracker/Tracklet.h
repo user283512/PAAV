@@ -10,7 +10,7 @@ class Tracklet
 {
 public:
   Tracklet(int idTrack, double x, double y);
-  ~Tracklet() = default;
+  ~Tracklet();
 
   void predict();
   void update(double x, double y, bool lidarStatus);

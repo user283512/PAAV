@@ -1,8 +1,9 @@
 #include "CloudManager.h"
 
-#include <filesystem>
-
-CloudManager::CloudManager(const std::string &path, int64_t freq, viewer::Renderer &renderer)
+CloudManager::CloudManager(
+		const std::filesystem::path &path,
+		int64_t freq,
+		viewer::Renderer &renderer)
 {
 	path_ = path;
 	freq_ = freq;
@@ -16,7 +17,7 @@ CloudManager::CloudManager(const std::string &path, int64_t freq, viewer::Render
 	mtxData.unlock();
 }
 
-void CloudManager::processAndRenderPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
+void CloudManager::processAndRenderPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
@@ -57,9 +58,9 @@ void CloudManager::processAndRenderPointCloud(const pcl::PointCloud<pcl::PointXY
 		seg.segment(*inliers, *coefficients);
 		if (inliers->indices.size() == 0)
 		{
-				std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
-				skip = true;
-				break;
+			std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
+			skip = true;
+			break;
 		}
 
 		// Extract the planar inliers from the input cloud
@@ -102,11 +103,11 @@ void CloudManager::processAndRenderPointCloud(const pcl::PointCloud<pcl::PointXY
 
 		std::vector<viewer::Box> boxes;
 
-		for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
+		for (auto it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
 		{
 			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-			for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
-					cloud_cluster->push_back((*cloud_filtered)[*pit]);
+			for (auto pit = it->indices.begin(); pit != it->indices.end(); ++pit)
+				cloud_cluster->push_back((*cloud_filtered)[*pit]);
 
 			cloud_cluster->width = cloud_cluster->size();
 			cloud_cluster->height = 1;
@@ -146,14 +147,13 @@ void CloudManager::startCloudManager()
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 	std::vector<std::filesystem::path> stream(
-		std::filesystem::directory_iterator{path_},
-		std::filesystem::directory_iterator{}
-	);
+			std::filesystem::directory_iterator{path_},
+			std::filesystem::directory_iterator{});
+	assert(stream.size() != 0);
 
 	// sort files in ascending (chronological) order
 	std::sort(stream.begin(), stream.end());
 	auto streamIterator = stream.begin();
-
 	while (true && streamIterator != stream.end())
 	{
 		auto startTime = std::chrono::steady_clock::now();

@@ -1,5 +1,8 @@
+
+//
 // The original author of the rendering code is Aaron Brown (https://github.com/awbrown90).
 // His code has been slightly modified to make it more structured.
+//
 
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
@@ -14,7 +17,6 @@
 
 namespace viewer
 {
-
   static bool lidarActivated;
 
   class Renderer
@@ -42,17 +44,19 @@ namespace viewer
 
     void addText(float centroid_x, float centroid_y, int id);
 
-    void renderPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
-                          const std::string &name,
-                          const Color &color = Color(1, 1, 1));
+    void renderPointCloud(
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+        const std::string &name,
+        Color color = Color(1, 1, 1));
 
-    void renderPointCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud,
-                          const std::string &name,
-                          const Color &color = Color(-1, -1, -1));
+    void renderPointCloud(
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud,
+        const std::string &name,
+        Color color = Color(-1, -1, -1));
 
-    void renderBox(const Box &box, int id, const Color &color = Color(1, 0, 0), float opacity = 1.0);
+    void renderBox(const Box &box, int id, Color color = Color(1, 0, 0), float opacity = 1.0);
 
-    void renderBox(const BoxQ &box, int id, const Color &color = Color(1, 0, 0), float opacity = 1.0);
+    void renderBox(const BoxQ &box, int id, Color color = Color(1, 0, 0), float opacity = 1.0);
 
     void initCamera(CameraAngle view_angle);
 
