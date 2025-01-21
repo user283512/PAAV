@@ -3,12 +3,11 @@
 CloudManager::CloudManager(
 		const std::filesystem::path &path,
 		int64_t freq,
-		viewer::Renderer &renderer)
+		viewer::Renderer &renderer) :
+	path_{ path },
+	freq_{ freq },
+	renderer_{ &renderer }
 {
-	path_ = path;
-	freq_ = freq;
-	renderer_ = &renderer;
-
 	// create the cloud
 	cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -153,13 +152,14 @@ void CloudManager::startCloudManager()
 
 	// sort files in ascending (chronological) order
 	std::sort(stream.begin(), stream.end());
+	
+	pcl::PCDReader reader;
 	auto streamIterator = stream.begin();
 	while (true && streamIterator != stream.end())
 	{
 		auto startTime = std::chrono::steady_clock::now();
 
 		// read pointcloud from file
-		pcl::PCDReader reader;
 		reader.read(streamIterator->string(), *input_cloud);
 
 		// process pointcloud

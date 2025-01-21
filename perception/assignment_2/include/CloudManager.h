@@ -30,8 +30,8 @@ public:
 
   // getters
   pcl::PointCloud<pcl::PointXYZ>::Ptr getCloud() { return cloud_; }
-  std::vector<viewer::Box> getBoxes() { return boxes_; }
   viewer::Color getColor() { return color_; }
+  const std::vector<viewer::Box> &getBoxes() { return boxes_; }
   const std::vector<double> &getCentroidsX() { return centroids_x_; }
   const std::vector<double> &getCentroidsY() { return centroids_y_; }
   const std::vector<double> &getCentroidsZ() { return centroids_z_; }
@@ -61,7 +61,7 @@ private:
   int64_t freq_;
 
   // path to logs
-  std::string path_;
+  std::filesystem::path path_;
 };
 
 #endif // MANAGER_H_

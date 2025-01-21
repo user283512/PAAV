@@ -6,44 +6,49 @@
 class KalmanFilter
 {
 public:
-  KalmanFilter();
-  ~KalmanFilter();
+  KalmanFilter() = default;
+  ~KalmanFilter() = default;
 
-  // init the filter
+  // Initialize the filter with the given time step (dt).
   void init(double dt);
 
+  // Perform the prediction step of the Kalman Filter, updating the state and covariance matrix.
   void predict();
+
+  // Perform the update step of the Kalman Filter using the provided measurement vector z.
+  // This adjusts the predicted state based on the measurement.
   void update(const Eigen::VectorXd &z);
 
-  // setters
+  // Set the state to the given x and y coordinates.
+  // Useful for initializing or resetting the filter's state.
   void setState(double x, double y);
 
-  // getters
+  // Getters to retrieve specific state or covariance information.
   double getXCovariance() { return P_.coeff(0, 0); }
   double getYCovariance() { return P_.coeff(1, 1); }
   double getX() { return x_[0]; }
   double getY() { return x_[1]; }
 
 private:
-  // dt in seconds
+  // Time step in seconds, used for calculating the state transition matrix (F_).
   double dt_;
 
-  // state vector
+  // State vector (e.g., [x, y, vx, vy] for 2D tracking), containing the current estimated state.
   Eigen::VectorXd x_;
 
-  // state covariance matrix
+  // State covariance matrix, representing the uncertainty of the state estimate.
   Eigen::MatrixXd P_;
 
-  // state transistion matrix
+  // State transition matrix, used to model how the state evolves over time.
   Eigen::MatrixXd F_;
 
-  // process covariance matrix
+  // Process noise covariance matrix, accounting for uncertainty in the process model.
   Eigen::MatrixXd Q_;
 
-  // measurement matrix
+  // Measurement matrix, mapping the state to the measurement space.
   Eigen::MatrixXd H_;
 
-  // measurement covariance matrix
+  // Measurement noise covariance matrix, representing the uncertainty in the measurements.
   Eigen::MatrixXd R_;
 };
 

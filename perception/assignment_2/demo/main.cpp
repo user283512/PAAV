@@ -60,10 +60,10 @@ int main()
 
 		// retrieve tracklets and render the trackers
 		auto tracks = tracker.getTracks();
-		for (size_t i = 0; i < tracks.size(); ++i)
+		for (auto &track : tracks)
 		{
-			renderer.addCircle(tracks[i].getX(), tracks[i].getY(), tracks[i].getId());
-			renderer.addText(tracks[i].getX() + 0.01, tracks[i].getY() + 0.01, tracks[i].getId());
+			renderer.addCircle(track.getX(), track.getY(), track.getId());
+			renderer.addText(track.getX() + 0.01, track.getY() + 0.01, track.getId());
 		}
 
 		renderer.spinViewerOnce();

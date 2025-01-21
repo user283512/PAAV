@@ -1,13 +1,5 @@
 #include "tracker/KalmanFilter.h"
 
-KalmanFilter::KalmanFilter()
-{
-}
-
-KalmanFilter::~KalmanFilter()
-{
-}
-
 void KalmanFilter::init(double dt)
 {
   dt_ = dt;
