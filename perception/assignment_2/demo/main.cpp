@@ -50,8 +50,10 @@ int main()
 		lidar_cloud.new_measurement = false;
 		lidar_cloud.mtxData.unlock();
 
-		// render pointcloud and boxes
+		// render pointcloud
 		renderer.renderPointCloud(cloud, "pointCloud", color);
+
+		// render boxes
 		for (size_t i = 0; i < boxes.size(); ++i)
 			renderer.renderBox(boxes[i], i);
 

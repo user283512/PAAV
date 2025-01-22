@@ -33,7 +33,7 @@ private:
   // Time step in seconds, used for calculating the state transition matrix (F_).
   double dt_;
 
-  // State vector (e.g., [x, y, vx, vy] for 2D tracking), containing the current estimated state.
+  // Represents the state vector, and contains position and velocity information [x, y, vx, vy]
   Eigen::VectorXd x_;
 
   // State covariance matrix, representing the uncertainty of the state estimate.
