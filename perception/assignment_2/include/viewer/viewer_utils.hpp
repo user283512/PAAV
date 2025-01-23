@@ -19,6 +19,13 @@ namespace viewer
     float x_max;
     float y_max;
     float z_max;
+
+    bool isPointInside(float x, float y, float z)
+    {
+      return x >= x_min && x <= x_max &&
+             y >= y_min && y <= y_max &&
+             z >= z_min && z <= z_max;
+    }
   };
 
   struct Color

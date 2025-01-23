@@ -20,20 +20,23 @@ void Tracker::removeTracks()
 	{
 		if (track.getLossCount() > loss_threshold_) // The track's loss count exceeds the loss_threshold.
 		{
-			std::printf("Removing Tracklet %d due to excessive loss count (%d > %d)\n",
-									track.getId(),
-									track.getLossCount(),
-									loss_threshold_);
+			std::printf(
+					"Removing Tracklet %d due to excessive loss count (%d > %d)\n",
+					track.getId(),
+					track.getLossCount(),
+					loss_threshold_);
 			return true;
 		}
 		if (track.getXCovariance() > covariance_threshold_ || // The track's X covariance exceeds the covariance_threshold.
 				track.getYCovariance() > covariance_threshold_)		// The track's Y covariance exceeds the covariance_threshold.
 		{
-			std::printf("Removing Tracklet %d due to excessive uncertainty (%f, %f) > %f\n",
-									track.getId(),
-									track.getXCovariance(),
-									track.getYCovariance(),
-									covariance_threshold_);
+			std::printf(
+					"Removing Tracklet %d due to excessive uncertainty (%f, %f) > %f\n",
+					track.getId(),
+					track.getXCovariance(),
+					track.getYCovariance(),
+					covariance_threshold_);
+
 			return true;
 		}
 
@@ -42,6 +45,7 @@ void Tracker::removeTracks()
 	auto new_end = std::remove_if(tracks_.begin(), tracks_.end(), lambda);
 	// Removes marked tracklets
 	tracks_.erase(new_end, tracks_.end());
+	std::printf("(tracks_.size()=%d)", tracks_.size());
 }
 
 void Tracker::addTracks(
@@ -55,16 +59,17 @@ void Tracker::addTracks(
 		// if associated_detections[i] is false, it means that the detection is not associated with any active trace.
 		if (!associated_detections.at(i))
 		{
-			std::printf("Creating new tracklet %d at position (%f, %f)\n",
-									cur_id_,
-									centroids_x.at(i),
-									centroids_y.at(i));
-
 			// A new tracklet is created using the coordinates (centroids_x[i], centroids_y[i]).
 			tracks_.emplace_back(
 					cur_id_,
 					centroids_x.at(i),
 					centroids_y.at(i));
+
+			std::printf("Creating new tracklet %d at position (%f, %f) (tracks_.size()=%d)\n",
+									cur_id_,
+									centroids_x.at(i),
+									centroids_y.at(i),
+									tracks_.size());
 
 			cur_id_++;
 		}
@@ -160,12 +165,13 @@ void Tracker::track(
 		double old_y = track.getY();
 		track.predict();
 
-		std::printf("Tracklet %d prediction from (%f, %f) to (%f, %f)\n",
-								track.getId(),
-								old_x,
-								old_y,
-								track.getX(),
-								track.getY());
+		std::printf(
+				"Tracklet %d prediction from (%f, %f) to (%f, %f)\n",
+				track.getId(),
+				old_x,
+				old_y,
+				track.getX(),
+				track.getY());
 	}
 
 	// std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -186,11 +192,18 @@ void Tracker::track(
 	// location of the detection.
 	for (auto [track_id, detection_id] : associated_track_det_ids_)
 	{
-		std::printf("Update track %d\n", track_id);
-		tracks_.at(track_id).update(
-				centroids_x.at(detection_id),
-				centroids_y.at(detection_id),
-				lidarStatus);
+		auto lambda = [&](Tracklet &track)
+		{ return track.getId() == track_id; };
+
+		auto it = std::find_if(tracks_.begin(), tracks_.end(), lambda);
+		if (it != tracks_.end())
+		{
+			std::printf("Update track %d (tracks_.size()=%d)\n", track_id, tracks_.size());
+			it->update(
+					centroids_x.at(detection_id),
+					centroids_y.at(detection_id),
+					lidarStatus);
+		}
 	}
 
 	// std::this_thread::sleep_for(std::chrono::seconds(1));
