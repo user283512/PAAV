@@ -23,13 +23,6 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
-# file(GLOB tracker_SRC
-#   "src/tracker/KalmanFilter.cpp"
-#   "src/tracker/Tracklet.cpp"
-#   "src/tracker/Tracker.cpp"
-#   "src/viewer/Renderer.cpp"
-#   "src/CloudManager.cpp"
-# )
 file(GLOB_RECURSE tracker_SRC
   "src/*.cpp"
   "src/**/*.cpp"

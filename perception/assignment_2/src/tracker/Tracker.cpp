@@ -7,36 +7,32 @@ void Tracker::removeTracks()
 	if (tracks_.empty())
 		return;
 
-	// We invert the tracks_ vector to avoid iterator invalidation problems when we delete elements.
-	// for (size_t i = tracks_.size(); i > 0; i--)
-	// {
-	// 	auto &track = tracks_[i - 1];
-	// 	if (track.getLossCount() > loss_threshold ||					// The track's loss count exceeds the loss_threshold.
-	// 			track.getXCovariance() > covariance_threshold ||	// The track's X covariance exceeds the covariance_threshold.
-	// 			track.getYCovariance() > covariance_threshold)		// The track's Y covariance exceeds the covariance_threshold.
-	// 	{
-	// 		std::cout << "Removing Tracklet ID " << track.getId()
-	// 							<< " due to excessive loss count or uncertainty."
-	// 							<< std::endl;
-	// 		tracks_.erase(tracks_.begin() + (i - 1));
-	// 	}
-	// }
-
 	// Avoiding Multiple Calls to tracks_.erase using std::remove_if
 	auto lambda = [&](Tracklet &track)
 	{
-		if (track.getLossCount() > loss_threshold ||				 // The track's loss count exceeds the loss_threshold.
-				track.getXCovariance() > covariance_threshold || // The track's X covariance exceeds the covariance_threshold.
-				track.getYCovariance() > covariance_threshold)	 // The track's Y covariance exceeds the covariance_threshold.
+		if (track.getLossCount() > loss_threshold_) // The track's loss count exceeds the loss_threshold.
 		{
-			std::cout << "Removing Tracklet ID " << track.getId()
-								<< " due to excessive loss count or uncertainty."
-								<< std::endl;
+			std::printf("Removing Tracklet ID %d due to excessive loss count (%d > %d)\n",
+									track.getId(),
+									track.getLossCount(),
+									loss_threshold_);
 			return true;
 		}
+		if (track.getXCovariance() > covariance_threshold_ || // The track's X covariance exceeds the covariance_threshold.
+				track.getYCovariance() > covariance_threshold_)		// The track's Y covariance exceeds the covariance_threshold.
+		{
+			std::printf("Removing Tracklet ID %d due to excessive uncertainty (%f, %f) > %f\n",
+									track.getId(),
+									track.getXCovariance(),
+									track.getYCovariance(),
+									covariance_threshold_);
+			return true;
+		}
+
 		return false;
 	};
 	auto new_end = std::remove_if(tracks_.begin(), tracks_.end(), lambda);
+	// Removes marked tracklets
 	tracks_.erase(new_end, tracks_.end());
 }
 
@@ -45,18 +41,17 @@ void Tracker::addTracks(
 		const std::vector<double> &centroids_x,
 		const std::vector<double> &centroids_y)
 {
-	// For each detection, we check associated_detections[i].
-	// If it is false, it means that the detection is not associated with any existing track,
-	// so a new Tracklet will be created.
+	// Iterates through all detections
 	for (size_t i = 0; i < associated_detections.size(); i++)
 	{
+		// if associated_detections[i] is false, it means that the detection is not associated with any active trace.
 		if (!associated_detections[i])
 		{
-			std::cout << "Creating new Tracklet for detection at ("
-								<< centroids_x[i] << ", " << centroids_y[i] << ")"
-								<< std::endl;
+			std::printf("Creating new tracklet at position (%f, %f)\n",
+									centroids_x[i],
+									centroids_y[i]);
 
-			// Tracklet(int idTrack, double x, double y);
+			// A new tracklet is created using the coordinates (centroids_x[i], centroids_y[i]).
 			tracks_.emplace_back(cur_id_++, centroids_x[i], centroids_y[i]);
 		}
 	}
@@ -68,26 +63,58 @@ void Tracker::dataAssociation(
 		const std::vector<double> &centroids_y)
 {
 #if 0
-	// Remind this vector contains a pair of tracks and its corresponding
-	associated_track_det_ids_.clear();
-
-	for (size_t i = 0; i < tracks_.size(); ++i)
+	// Iteration on existing tracks (tracks_)
+	for (size_t i = 0; i < tracks_.size(); i++)
 	{
-		int closest_point_id = -1;
-		double min_dist = std::numeric_limits<double>::max();
+		Tracklet &track = tracks_[i];
 
-		for (size_t j = 0; j < associated_detections.size(); ++j)
+		// Track uncertainty check:
+		// If the covariance of the track exceeds the threshold specified by covariance_threshold_,
+		// the track is ignored. This avoids associating detections with traces with high uncertainty.
+		if (track.getXCovariance() > covariance_threshold_ ||
+				track.getYCovariance() > covariance_threshold_)
 		{
-			// TODO
-			// Implement logic to find the closest detection (centroids_x,centroids_y)
-			// to the current track (tracks_)
+			std::printf("Ignore track: the covariance (%f, %f) exceeds the threshold specified (%f)\n",
+									track.getXCovariance(),
+									track.getYCovariance(),
+									covariance_threshold_);
+
+			continue;
 		}
 
-		// Associate the closest detection to a tracklet
-		if (min_dist < distance_threshold_ && !associated_detections[closest_point_id])
+		double min_distance = std::numeric_limits<double>::max();
+		int best_match = -1;
+
+		// For each detection
+		for (size_t j = 0; j < centroids_x.size(); ++j)
 		{
-			associated_track_det_ids_.push_back(std::make_pair(closest_point_id, i));
-			associated_detections[closest_point_id] = true;
+			if (associated_detections[j])
+				continue;
+
+			// The Euclidean distance is calculated and compared with the distance_threshold_.
+			// If the detection is close enough and has the smallest distance found so far,
+			// it is considered as the "best match"
+			double dx = centroids_x[j] - track.getX();
+			double dy = centroids_y[j] - track.getY();
+			double distance = std::sqrt(pow(dx, 2) + pow(dy, 2));
+			if (distance < min_distance && distance < distance_threshold_)
+			{
+				min_distance = distance;
+				best_match = j;
+			}
+		}
+
+		// If best_match is found (i.e., a detection meets the distance criterion)
+		if (best_match != -1)
+		{
+			// Mark as associated in associated_detections
+			associated_detections[best_match] = true;
+
+			// Save in associated_track_det_ids_ to update current associations.
+			associated_track_det_ids_.emplace_back(i, best_match);
+
+			// Call track.update() with the detection coordinates to update the tracklet with the new location.
+			track.update(centroids_x[best_match], centroids_y[best_match], true);
 		}
 	}
 #endif
@@ -98,60 +125,49 @@ void Tracker::track(
 		const std::vector<double> &centroids_y,
 		bool lidarStatus)
 {
-	std::cout << "Starting tracking cycle..." << std::endl;
+	std::vector<bool> associated_detections(centroids_x.size(), false);
 
-	// ======================================
 	// 1. Prediction
-	// ======================================
-	//
-	// Before associating new detections, each existing tracklet calls the predict method
-	// to update the predicted state.
-	// This helps estimate where the tracklets will be at the next round of detections.
+	// For each existing tracklet, the system predicts its future position using the Kalman filter.
 	for (Tracklet &track : tracks_)
 	{
-		std::cout << "Tracklet ID " << track.getId()
-							<< " pre-prediction state: (" << track.getX() << ", " << track.getY() << ")"
-							<< std::endl;
+		std::printf("Tracklet ID %d pre-prediction state(%f, %f)\n",
+								track.getId(),
+								track.getX(),
+								track.getY());
+
 		track.predict();
-		std::cout << "Tracklet ID " << track.getId()
-							<< " post-prediction state: (" << track.getX() << ", " << track.getY() << ")"
-							<< std::endl;
+
+		std::printf("Tracklet ID %d post-prediction state(%f, %f)\n",
+								track.getId(),
+								track.getX(),
+								track.getY());
 	}
 
-	// ======================================
 	// 2. Data Association
-	// ======================================
-	//
-	// Calls the dataAssociation method to associate new centroids (detections) with existing tracklets.
-	// dataAssociation updates associated_detections to indicate which detections have been associated.
+	// After prediction, current detections (centroids) are associated with existing tracks,
+	// using a distance criterion (Euclidean distance)
+	dataAssociation(associated_detections, centroids_x, centroids_y);
 
-	std::vector<bool> associated_detections;
-	associated_detections.assign(centroids_x.size(), false);
-	associated_track_det_ids_.clear();
+	// 3. Update
+	// Once detections are associated with tracks, the track data is updated with the new information
+	// from the detections. If a track is associated with a detection, its location is updated with the
+	// location of the detection.
+	for (size_t i = 0; i < tracks_.size(); ++i)
+	{
+		if (associated_detections[i])
+		{
+			tracks_[i].update(centroids_x[i], centroids_y[i], lidarStatus);
+		}
+	}
 
-	// dataAssociation(associated_detections, centroids_x, centroids_y);
-	// for (size_t i = 0; i < tracks_.size(); i++)
-	// {
-	// 	std::cout << "Tracklet ID " << tracks_[i].getId() << " is associated with detection: "
-	// 						<< (associated_detections[i] ? "Yes" : "No")
-	// 						<< std::endl;
-	// }
-
-	// ======================================
-	// 3. Addition of New Tracklets
-	// ======================================
-	//
-	// Use the addTracks method to create new tracklets for detections that have not been associated
-	// with any existing tracklet.
-	// Each new unassociated detection generates a new tracklet with a unique ID.
+	// 4. Add new tracks
+	// If there are detections that have not been associated with existing tracks,
+	// new tracks (tracklets) are created for these detections.
 	addTracks(associated_detections, centroids_x, centroids_y);
 
-	// ======================================
-	// 4. Remove tracklets
-	// ======================================
-	// Call the removeTracks method to remove tracklets that have too many update failures
-	// (exceed loss_threshold) or too much uncertainty (exceed covariance_threshold)
+	// 5. Remove tracks
+	// Tracks that have not been associated with detections for a number of frames,
+	// or that have too high an uncertainty (e.g., due to high covariance), are removed.
 	removeTracks();
-
-	std::cout << "Tracking cycle completed." << std::endl;
 }

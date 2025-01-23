@@ -8,6 +8,10 @@
 
 namespace fs = std::filesystem;
 
+extern double g_distance_threshold;
+extern double g_covariance_threshold;
+extern int g_loss_threshold;
+
 int main()
 {
 	static const fs::path res_dir = fs::current_path() / "res";
@@ -23,7 +27,7 @@ int main()
 	renderer.clearViewer();
 
 	// Instantiate the tracker
-	Tracker tracker;
+	Tracker tracker{g_distance_threshold, g_covariance_threshold, g_loss_threshold};
 
 	// Frequency of the thread dedicated to process the point cloud
 	constexpr int64_t freq = 100;

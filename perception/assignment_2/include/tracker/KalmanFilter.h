@@ -3,6 +3,13 @@
 
 #include <eigen3/Eigen/Dense>
 
+// Objective:
+// - The Kalman filter is used to track the position of objects over time.
+//   This means that given a set of noisy measurements of an object's position,
+//   the Kalman filter can estimate the current position and predict the future position of the object.
+// How it works:
+// - Prediction: Uses the state transition matrix to calculate the predicted position and velocity of the object.
+// - Update: Uses the new measurement to correct the predicted estimate, reducing the uncertainty.
 class KalmanFilter
 {
 public:

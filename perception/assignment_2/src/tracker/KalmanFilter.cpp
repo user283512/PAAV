@@ -14,8 +14,8 @@ void KalmanFilter::init(double dt)
 
   // This matrix represents the initial uncertainty on the state variables
   // Values 9999.0 indicate that the Kalman filter has very little knowledge of the initial state.
-  constexpr float pos_variance = 9999.0f; // Variance for position
-  constexpr float vel_variance = 9999.0f; // Variance for velocity
+  constexpr float pos_variance = 0.0f; // Variance for position
+  constexpr float vel_variance = 0.0f; // Variance for velocity
   P_ = Eigen::MatrixXd(4, 4);
   P_ << pos_variance, 0.0, 0.0, 0.0,
       0.0, pos_variance, 0.0, 0.0,
