@@ -42,9 +42,9 @@ int main()
 		renderer.clearViewer();
 
 		while (!lidar_cloud.new_measurement)
-			; // wait for new data (we will execute the following code each 100ms)
+			; // Wait for new data (we will execute the following code each 100ms)
 
-		// fetch data
+		// Fetch data
 		lidar_cloud.mtxData.lock();
 		auto cloud = lidar_cloud.getCloud();
 		auto color = lidar_cloud.getColor();
@@ -54,25 +54,27 @@ int main()
 		lidar_cloud.new_measurement = false;
 		lidar_cloud.mtxData.unlock();
 
-		// render pointcloud
+		// Render pointcloud
 		renderer.renderPointCloud(cloud, "pointCloud", color);
 
-		// render boxes
+		// Render boxes
 		for (size_t i = 0; i < boxes.size(); ++i)
 			renderer.renderBox(boxes[i], i);
 
 		// Call the tracker on the detected clusters
 		tracker.track(centroids_x, centroids_y, renderer.getLidarStatus());
 
-		// retrieve tracklets and render the trackers
-		auto tracks = tracker.getTracks();
-		for (auto &track : tracks)
-		{
-			renderer.addCircle(track.getX(), track.getY(), track.getId());
-			renderer.addText(track.getX() + 0.01, track.getY() + 0.01, track.getId());
-		}
+		renderer.addText(0.0, 0.0, 0);
 
-		renderer.spinViewerOnce();
+		// Retrieve tracklets and render the trackers
+		auto tracks = tracker.getTracks();
+		// for (auto &track : tracks)
+		// {
+		// 	renderer.addCircle(track.getX(), track.getY(), track.getId());
+		// 	//renderer.addText(track.getX() + 0.01, track.getY() + 0.01, track.getId());
+		// }
+
+		renderer.spinViewerOnce(100);
 	}
 
 	t.join();

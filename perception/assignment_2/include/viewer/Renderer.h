@@ -62,7 +62,7 @@ namespace viewer
 
     bool wasViewerStopped() const;
 
-    void spinViewerOnce() const;
+    void spinViewerOnce(int time = 0) const;
   };
 }
 

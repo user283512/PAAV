@@ -75,7 +75,7 @@ private:
   // A unique ID for each tracklet
   int cur_id_;
 
-  // A list of pairs that associates tracklet IDs with detection IDs.
+  // A list of pairs that associates tracklet ID with detection ID.
   std::vector<std::pair<int, int>> associated_track_det_ids_;
 
   // A threshold for determining whether a detection is close enough to an existing tracklet

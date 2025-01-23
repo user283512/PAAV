@@ -216,8 +216,8 @@ namespace viewer
   {
   }
 
-  void Renderer::spinViewerOnce() const
+  void Renderer::spinViewerOnce(int time) const
   {
-    viewer_->spinOnce();
+    viewer_->spinOnce(time);
   }
 }
