@@ -12,6 +12,8 @@ extern double g_distance_threshold;
 extern double g_covariance_threshold;
 extern int g_loss_threshold;
 
+// Define an area and count the persons that has entered in that area
+
 static std::set<int> persons_inside; // IDs of the persons currently in the area
 static int people_entered_count = 0;
 
