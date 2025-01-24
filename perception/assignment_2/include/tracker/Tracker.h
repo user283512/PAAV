@@ -38,10 +38,9 @@ public:
   //  - a vector of Boolean values indicating, for each detection, whether it has been associated with
   //    an existing track (true) or not (false).
   //  - vectors containing the X and Y coordinates of the centers of the surveys.
-  void addTracks(
-      const std::vector<bool> &associated_detections,
-      const std::vector<double> &centroids_x,
-      const std::vector<double> &centroids_y);
+  void addTracks(const std::vector<bool> &associated_detections,
+                 const std::vector<double> &centroids_x,
+                 const std::vector<double> &centroids_y);
 
   // This method is responsible for associating detections (the coordinates of centroids_x and centroids_y)
   // with existing tracks (Tracklets) based on the distance between them.
@@ -56,15 +55,13 @@ public:
   //  - the coordinates of the centers of detections in the scene (e.g., the positions of detected people or objects).
   // Output:
   //  - updates the vector to indicate which detections have been associated with a track.
-  void dataAssociation(
-      std::vector<bool> &associated_detections,
-      const std::vector<double> &centroids_x,
-      const std::vector<double> &centroids_y);
+  void dataAssociation(std::vector<bool> &associated_detections,
+                       const std::vector<double> &centroids_x,
+                       const std::vector<double> &centroids_y);
 
-  void track(
-      const std::vector<double> &centroids_x,
-      const std::vector<double> &centroids_y,
-      bool lidarStatus);
+  void track(const std::vector<double> &centroids_x,
+             const std::vector<double> &centroids_y,
+             bool lidarStatus);
 
   // getters
   const std::vector<Tracklet> &getTracks() { return tracks_; }

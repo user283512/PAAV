@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <set>
 
 #include "viewer/Renderer.h"
 #include "tracker/Tracker.h"
@@ -11,16 +12,44 @@ extern double g_distance_threshold;
 extern double g_covariance_threshold;
 extern int g_loss_threshold;
 
-viewer::Box createFlatArea(float center_x, float center_y, float diameter)
+static std::set<int> persons_inside; // IDs of the persons currently in the area
+static int people_entered_count = 0;
+
+static bool isTrackInside(const viewer::Box &area,
+													const Tracklet &track)
 {
-	viewer::Box area;
-	area.x_min = center_x - diameter;
-	area.x_max = center_x + diameter;
-	area.z_min = 0.f;
-	area.z_max = 0.f;
-	area.y_min = center_y - diameter;
-	area.y_max = center_y + diameter;
-	return area;
+	return (
+			track.getX() <= area.x_max && track.getX() >= area.x_min &&
+			track.getY() <= area.y_max && track.getY() >= area.y_min);
+}
+
+static int countTrackInArea(const std::vector<Tracklet> &tracks,
+														const viewer::Box &area)
+{
+	auto lambda = [&](const Tracklet &track)
+	{ return isTrackInside(area, track); };
+
+	return std::count_if(tracks.begin(), tracks.end(), lambda);
+}
+
+static void updatePeopleInArea(const std::vector<Tracklet> &tracks,
+															 const viewer::Box &area)
+{
+	std::set<int> current_inside;
+
+	for (const auto &track : tracks)
+	{
+		if (isTrackInside(area, track))
+		{
+			current_inside.insert(track.getId());
+
+			// If a person was not previously inside, increment the counter.
+			if (persons_inside.find(track.getId()) == persons_inside.end())
+				++people_entered_count;
+		}
+	}
+
+	persons_inside = current_inside;
 }
 
 int main()
@@ -48,7 +77,9 @@ int main()
 	std::thread t(&CloudManager::startCloudManager, &lidar_cloud);
 
 	// Create an area of size 10x10
-	viewer::Box area = createFlatArea(0.0f, 0.0f, 5.0f);
+	viewer::Box area_of_interest = {
+			-5.0f, -5.0f, 0.0f,
+			5.0f, 5.0f, 0.0f};
 
 	while (true)
 	{
@@ -72,11 +103,11 @@ int main()
 		renderer.renderPointCloud(cloud, "pointCloud", color);
 
 		// Render area
-		renderer.renderBox(area, 0, viewer::Color(0, 1, 0), 0.5f);
+		renderer.renderBox(area_of_interest, 0, viewer::Color(0, 1, 0), 0.25f);
 
 		// Render boxes
-		// for (size_t i = 0; i < boxes.size(); ++i)
-		// 	renderer.renderBox(boxes[i], i + 1, viewer::Color(1, 0, 0));
+		for (size_t i = 0; i < boxes.size(); ++i)
+			renderer.renderBox(boxes[i], i + 1, viewer::Color(1, 0, 0));
 
 		// Call the tracker on the detected clusters
 		tracker.track(centroids_x, centroids_y, renderer.getLidarStatus());
@@ -86,10 +117,16 @@ int main()
 		for (auto &track : tracks)
 		{
 			renderer.addCircle(track.getX(), track.getY(), track.getId());
-			// renderer.addText(track.getX() + 0.01, track.getY() + 0.01, track.getId());
+			renderer.addText(track.getX() + 0.01, track.getY() + 0.01, track.getId());
 		}
 
-		renderer.spinViewerOnce(1000);
+		// Update the count of persons entering the area.
+		updatePeopleInArea(tracks, area_of_interest);
+		std::printf("countTrackInArea=%d, people_entered_count=%d\n",
+								countTrackInArea(tracks, area_of_interest),
+								people_entered_count);
+
+		renderer.spinViewerOnce();
 	}
 
 	t.join();

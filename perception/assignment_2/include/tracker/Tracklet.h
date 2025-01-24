@@ -16,12 +16,12 @@ public:
   void update(double x, double y, bool lidarStatus);
 
   // getters
-  double getX() { return kf_.getX(); }
-  double getY() { return kf_.getY(); }
+  double getX() const { return kf_.getX(); }
+  double getY() const { return kf_.getY(); }
   double getXCovariance() { return kf_.getXCovariance(); }
   double getYCovariance() { return kf_.getYCovariance(); }
   int getLossCount() { return loss_count_; }
-  int getId() { return id_; }
+  int getId() const { return id_; }
 
 private:
   // filter

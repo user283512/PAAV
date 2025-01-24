@@ -2,8 +2,12 @@
 
 #include <iostream>
 #include <thread>
+#include <set>
 
-static double calculateEuclideanDistance(double x1, double y1, double x2, double y2)
+static double calculateEuclideanDistance(double x1,
+																				 double y1,
+																				 double x2,
+																				 double y2)
 {
 	double dx = x1 - x2;
 	double dy = y1 - y2;
@@ -43,15 +47,12 @@ void Tracker::removeTracks()
 		return false;
 	};
 	auto new_end = std::remove_if(tracks_.begin(), tracks_.end(), lambda);
-	// Removes marked tracklets
 	tracks_.erase(new_end, tracks_.end());
-	std::printf("(tracks_.size()=%d)", tracks_.size());
 }
 
-void Tracker::addTracks(
-		const std::vector<bool> &associated_detections,
-		const std::vector<double> &centroids_x,
-		const std::vector<double> &centroids_y)
+void Tracker::addTracks(const std::vector<bool> &associated_detections,
+												const std::vector<double> &centroids_x,
+												const std::vector<double> &centroids_y)
 {
 	// Iterates through all detections
 	for (size_t i = 0; i < associated_detections.size(); i++)
@@ -65,35 +66,34 @@ void Tracker::addTracks(
 					centroids_x.at(i),
 					centroids_y.at(i));
 
-			std::printf("Creating new tracklet %d at position (%f, %f) (tracks_.size()=%d)\n",
-									cur_id_,
-									centroids_x.at(i),
-									centroids_y.at(i),
-									tracks_.size());
+			std::printf(
+					"New tracklet %d created at position (%f, %f)\n",
+					cur_id_,
+					centroids_x.at(i),
+					centroids_y.at(i));
 
 			cur_id_++;
 		}
 	}
 }
 
-void Tracker::dataAssociation(
-		std::vector<bool> &associated_detections,
-		const std::vector<double> &centroids_x,
-		const std::vector<double> &centroids_y)
+void Tracker::dataAssociation(std::vector<bool> &associated_detections,
+															const std::vector<double> &centroids_x,
+															const std::vector<double> &centroids_y)
 {
-	// Itera su tutti i rilevamenti
+	// Iterate on all detections
 	for (size_t i = 0; i < associated_detections.size(); i++)
 	{
 		auto current_detection = associated_detections.at(i);
 
-		// Salta il rilevamento se è già associato
+		// Skip detection if it is already associated
 		if (current_detection)
 			continue;
 
 		double min_distance = std::numeric_limits<double>::max();
 		int best_track_id = -1;
 
-		// Itera su tutti i tracklet per trovare il più vicino
+		// Iterate on all tracklets to find the nearest
 		for (size_t j = 0; j < tracks_.size(); ++j)
 		{
 			auto &track = tracks_.at(j);
@@ -104,23 +104,23 @@ void Tracker::dataAssociation(
 			if (track.getXCovariance() > covariance_threshold_ ||
 					track.getYCovariance() > covariance_threshold_)
 			{
-				std::printf("Ignore track %d: covariance (%f, %f) exceeds the threshold specified (%f)\n",
-										track.getId(),
-										track.getXCovariance(),
-										track.getYCovariance(),
-										covariance_threshold_);
-
+				std::printf(
+						"Ignore track %d: covariance (%f, %f) exceeds the threshold specified (%f)\n",
+						track.getId(),
+						track.getXCovariance(),
+						track.getYCovariance(),
+						covariance_threshold_);
 				continue;
 			}
 
-			// Calcola la distanza Euclidea
+			// Calculate Euclidean distance
 			double distance = calculateEuclideanDistance(
 					centroids_x.at(i),
 					centroids_y.at(i),
 					track.getX(),
 					track.getY());
 
-			// Aggiorna il tracklet più vicino
+			// Update the nearest tracklet
 			if (distance < min_distance)
 			{
 				min_distance = distance;
@@ -128,68 +128,55 @@ void Tracker::dataAssociation(
 			}
 		}
 
-		// Associa il rilevamento al tracklet migliore, se la distanza è accettabile
+		// Associates tracking with the best tracklet, if the distance is acceptable
 		if (best_track_id != -1 && min_distance < distance_threshold_)
 		{
 			auto &best_track = tracks_.at(best_track_id);
 			associated_track_det_ids_.emplace_back(best_track.getId(), i);
 			current_detection = true;
 
-			// Log di debug per monitorare l'associazione
-			std::printf("Associated detection (%f, %f) to Tracklet %d with distance %f\n",
-									centroids_x.at(i),
-									centroids_y.at(i),
-									tracks_.at(best_track_id).getId(),
-									min_distance);
+			// std::printf(
+			// 		"Associated detection (%f, %f) to Tracklet %d with distance %f\n",
+			// 		centroids_x.at(i),
+			// 		centroids_y.at(i),
+			// 		tracks_.at(best_track_id).getId(),
+			// 		min_distance);
 		}
 	}
 }
 
-void Tracker::track(
-		const std::vector<double> &centroids_x,
-		const std::vector<double> &centroids_y,
-		bool lidarStatus)
+void Tracker::track(const std::vector<double> &centroids_x,
+										const std::vector<double> &centroids_y,
+										bool lidarStatus)
 {
 	associated_track_det_ids_.clear();
 
 	// std::printf("\n========================================\n");
 	// for (int i = 0; i < centroids_x.size(); i++)
 	// 	std::printf("Centroid (%f, %f)\n", centroids_x.at(i), centroids_y.at(i));
-	// std::printf("1. Start predict...\n");
 
 	// 1. Prediction
-	// For each existing tracklet, the system predicts its future position using the Kalman filter.
 	for (auto &track : tracks_)
 	{
 		double old_x = track.getX();
 		double old_y = track.getY();
 		track.predict();
 
-		std::printf(
-				"Tracklet %d prediction from (%f, %f) to (%f, %f)\n",
-				track.getId(),
-				old_x,
-				old_y,
-				track.getX(),
-				track.getY());
+		// std::printf(
+		// 		"1. Tracklet %d prediction from (%f, %f) to (%f, %f)\n",
+		// 		track.getId(),
+		// 		old_x,
+		// 		old_y,
+		// 		track.getX(),
+		// 		track.getY());
 	}
 
-	// std::this_thread::sleep_for(std::chrono::seconds(1));
-	// std::printf("2. Start associated_detections...\n");
-
 	// 2. Data Association
-	// After prediction, current detections (centroids) are associated with existing tracks,
-	// using a distance criterion (Euclidean distance)
+	// std::printf("2. Start associated_detections...\n");
 	std::vector<bool> associated_detections(centroids_x.size(), false);
 	dataAssociation(associated_detections, centroids_x, centroids_y);
 
-	// std::this_thread::sleep_for(std::chrono::seconds(1));
-	// std::printf("3. Start update...\n");
-
 	// 3. Update
-	// Once detections are associated with tracks, the track data is updated with the new information
-	// from the detections. If a track is associated with a detection, its location is updated with the
-	// location of the detection.
 	for (auto [track_id, detection_id] : associated_track_det_ids_)
 	{
 		auto lambda = [&](Tracklet &track)
@@ -198,7 +185,7 @@ void Tracker::track(
 		auto it = std::find_if(tracks_.begin(), tracks_.end(), lambda);
 		if (it != tracks_.end())
 		{
-			std::printf("Update track %d (tracks_.size()=%d)\n", track_id, tracks_.size());
+			// std::printf("3. Update tracklet %d\n", it->getId());
 			it->update(
 					centroids_x.at(detection_id),
 					centroids_y.at(detection_id),
@@ -206,21 +193,12 @@ void Tracker::track(
 		}
 	}
 
-	// std::this_thread::sleep_for(std::chrono::seconds(1));
-	// std::printf("4. Add new tracks...\n");
-
 	// 4. Add new tracks
-	// If there are detections that have not been associated with existing tracks,
-	// new tracks (tracklets) are created for these detections.
+	// std::printf("4. Add new tracks...\n");
 	addTracks(associated_detections, centroids_x, centroids_y);
 
-	// std::this_thread::sleep_for(std::chrono::seconds(1));
-	// std::printf("5. Remove tracks...\n");
-
 	// 5. Remove tracks
-	// Tracks that have not been associated with detections for a number of frames,
-	// or that have too high an uncertainty (e.g., due to high covariance), are removed.
+	// std::printf("5. Remove tracks...\n");
 	removeTracks();
-
-	// std::this_thread::sleep_for(std::chrono::seconds(1));
+	// std::printf("(tracks_.size()=%lu)\n", tracks_.size());
 }
