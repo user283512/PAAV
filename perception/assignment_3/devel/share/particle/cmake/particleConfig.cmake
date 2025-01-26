@@ -67,14 +67,14 @@ set(particle_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("TRUE" STREQUAL "TRUE")
-  set(particle_SOURCE_PREFIX /home/simone/Desktop/PAAV/assignment_3/src/particle)
-  set(particle_DEVEL_PREFIX /home/simone/Desktop/PAAV/assignment_3/devel)
+  set(particle_SOURCE_PREFIX /home/simone/Desktop/PAAV/perception/assignment_3/src/particle)
+  set(particle_DEVEL_PREFIX /home/simone/Desktop/PAAV/perception/assignment_3/devel)
   set(particle_INSTALL_PREFIX "")
   set(particle_PREFIX ${particle_DEVEL_PREFIX})
 else()
   set(particle_SOURCE_PREFIX "")
   set(particle_DEVEL_PREFIX "")
-  set(particle_INSTALL_PREFIX /home/simone/Desktop/PAAV/assignment_3/install)
+  set(particle_INSTALL_PREFIX /home/simone/Desktop/PAAV/perception/assignment_3/install)
   set(particle_PREFIX ${particle_INSTALL_PREFIX})
 endif()
 
@@ -91,9 +91,9 @@ endif()
 # flag project as catkin-based to distinguish if a find_package()-ed project is a catkin project
 set(particle_FOUND_CATKIN_PROJECT TRUE)
 
-if(NOT "/home/simone/Desktop/PAAV/assignment_3/src/particle/include " STREQUAL " ")
+if(NOT "/home/simone/Desktop/PAAV/perception/assignment_3/src/particle/include " STREQUAL " ")
   set(particle_INCLUDE_DIRS "")
-  set(_include_dirs "/home/simone/Desktop/PAAV/assignment_3/src/particle/include")
+  set(_include_dirs "/home/simone/Desktop/PAAV/perception/assignment_3/src/particle/include")
   if(NOT " " STREQUAL " ")
     set(_report "Check the issue tracker '' and consider creating a ticket if the problem has not been reported yet.")
   elseif(NOT " " STREQUAL " ")
@@ -110,7 +110,7 @@ if(NOT "/home/simone/Desktop/PAAV/assignment_3/src/particle/include " STREQUAL "
         message(FATAL_ERROR "Project 'particle' specifies '${idir}' as an include dir, which is not found.  It does not exist in '${include}'.  ${_report}")
       endif()
     else()
-      message(FATAL_ERROR "Project 'particle' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/simone/Desktop/PAAV/assignment_3/src/particle/${idir}'.  ${_report}")
+      message(FATAL_ERROR "Project 'particle' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/simone/Desktop/PAAV/perception/assignment_3/src/particle/${idir}'.  ${_report}")
     endif()
     _list_append_unique(particle_INCLUDE_DIRS ${include})
   endforeach()
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/simone/Desktop/PAAV/assignment_3/devel/lib;/opt/ros/melodic/lib)
+    foreach(path /home/simone/Desktop/PAAV/perception/assignment_3/devel/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
