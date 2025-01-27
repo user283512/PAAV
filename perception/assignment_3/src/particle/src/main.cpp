@@ -181,14 +181,37 @@ int main(int argc, char **argv)
 	static const fs::path map_data_file = data_dir / "map_data.txt";
 	static const fs::path map_pepperl_file = data_dir / "map_pepperl.pcd";
 	static const fs::path map_reflector_file = data_dir / "map_reflector.pcd";
+	static const fs::path out_bag_file = data_dir / "out.bag";
+	static const fs::path res_file = data_dir / "res.txt";
+	static const fs::path pf_slam_file = data_dir / "pf_slam.txt";
+	if (!fs::exists(map_data_file))
+	{
+		std::cout << "Error: data/map_data.txt file does not exist" << endl;
+		return -1;
+	}
 	if (!fs::exists(map_pepperl_file))
 	{
-		std::cout << "Error: map_pepperl.pcd file does not exist" << endl;
+		std::cout << "Error: data/map_pepperl.pcd file does not exist" << endl;
 		return -1;
 	}
 	if (!fs::exists(map_reflector_file))
 	{
-		std::cout << "Error: map_reflector.pcd file does not exist" << endl;
+		std::cout << "Error: data/map_reflector.pcd file does not exist" << endl;
+		return -1;
+	}
+	if (!fs::exists(out_bag_file))
+	{
+		std::cout << "Error: data/out.bag file does not exist" << endl;
+		return -1;
+	}
+	if (!fs::exists(res_file))
+	{
+		std::cout << "Error: data/res.txt file does not exist" << endl;
+		return -1;
+	}
+	if (!fs::exists(pf_slam_file))
+	{
+		std::cout << "Error: data/pf_slam.txt file does not exist" << endl;
 		return -1;
 	}
 
@@ -197,7 +220,7 @@ int main(int argc, char **argv)
 	pcl::io::loadPCDFile(map_reflector_file, *cloudReflectors); // cloud with just the reflectors
 	pcl::io::loadPCDFile(map_pepperl_file, *cloudMap);					// total cloud (used for rendering)
 
-	remove("./res.txt");
+	remove(res_file);
 	// This function locates the reflectors within the map and writes into the file
 	createMap(cloudReflectors, map_data_file, map_mille);
 
@@ -224,14 +247,23 @@ int main(int argc, char **argv)
 	renderer.RenderPointCloud(cloud_filtered_map, "originalCloud", Color(0, 0, 1));
 	renderer.RenderPointCloud(cloudReflectors, "reflectorCloud", Color(1, 0, 0));
 
+	Box box;
+	box.x_min = g_box_x_min;
+	box.x_max = g_box_x_max;
+	box.y_min = g_box_y_min;
+	box.y_max = g_box_y_max;
+	box.z_min = 0;
+	box.z_max = 0;
+	renderer.RenderBox(box, 1000, Color(1, 0, 0));
+
 	// Add the reflectors detected by the particles (you can ignore this)
 	for (int i = 0; i < g_num_reflectors; i++)
 		renderer.addCircle(0, 0, "reflector_id" + std::to_string(i), 0.2, 1, 1, 1);
 
 	// Initial position of the forklift
-	double GPS_x = 2.37256;
-	double GPS_y = 1.70077;
-	double GPS_theta = -1.68385;
+	static constexpr double GPS_x = 2.37256;
+	static constexpr double GPS_y = 1.70077;
+	static constexpr double GPS_theta = -1.68385;
 
 	// Insert one particle in the best particle set
 	Particle p(GPS_x, GPS_y, GPS_theta);
@@ -239,7 +271,7 @@ int main(int argc, char **argv)
 
 	// Init the particle filter
 	pf.init(GPS_x, GPS_y, GPS_theta, g_sigma_init, g_num_particles);
-	// pf.init_random(sigma_init,g_num_particles);
+	// pf.init_random(sigma_init, g_num_particles);
 
 	// Render all the particles
 	for (int i = 0; i < g_num_particles; i++)
@@ -258,14 +290,14 @@ int main(int argc, char **argv)
 
 	// Start ROS node
 	std::cout << "Map loaded, waiting for the rosbag" << std::endl;
-	myfile.open("./res.txt", std::ios_base::app);
+	myfile.open(res_file, std::ios_base::app);
 
 	ros::init(argc, argv, "Particle");
 	ros::NodeHandle n;
 
 	// Subscriber
-	ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/auriga_id0_odom", 1, &OdomCb);							// average rate: 31.438hz
-	ros::Subscriber pc_sub = n.subscribe<sensor_msgs::PointCloud2>("/pepperl_id0_cloud", 1, &PointCloudCb); // average rate: 10.728hz
+	ros::Subscriber odom_sub = n.subscribe<nav_msgs::Odometry>("/auriga_id0_odom", 1, &OdomCb);
+	ros::Subscriber pc_sub = n.subscribe<sensor_msgs::PointCloud2>("/pepperl_id0_cloud", 1, &PointCloudCb);
 	// To force 10hz replay use: rosbag play --clock --hz=10 out.bag
 	ros::spin();
 	myfile.close();

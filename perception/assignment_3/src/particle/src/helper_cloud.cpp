@@ -88,7 +88,6 @@ bool createMap(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 
   tree->setInputCloud(cloud);
   ec.setClusterTolerance(0);
-
   ec.setMinClusterSize(1);
   ec.setMaxClusterSize(2);
   ec.setSearchMethod(tree);
@@ -97,7 +96,6 @@ bool createMap(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 
   std::ofstream myfile(path);
   int i = 0;
-
   for (auto it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
   {
     std::vector<float> xComponent;

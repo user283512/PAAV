@@ -110,7 +110,6 @@ bool read_control_data(const std::filesystem::path &path,
 bool read_gt_data(const std::filesystem::path &path,
                   std::vector<ground_truth> &gt)
 {
-
   // Get file of position measurements:
   std::ifstream in_file_pos(path, std::ifstream::in);
   // Return if we can't open the file.
@@ -148,7 +147,6 @@ bool read_gt_data(const std::filesystem::path &path,
 bool read_landmark_data(const std::filesystem::path &path,
                         std::vector<LandmarkObs> &observations)
 {
-
   // Get file of landmark measurements:
   std::ifstream in_file_obs(path, std::ifstream::in);
   // Return if we can't open the file.
@@ -163,7 +161,6 @@ bool read_landmark_data(const std::filesystem::path &path,
   // Run over each single line:
   while (getline(in_file_obs, line_obs))
   {
-
     std::istringstream iss_obs(line_obs);
 
     // Declare position values:

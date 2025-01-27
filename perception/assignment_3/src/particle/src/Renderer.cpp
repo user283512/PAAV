@@ -36,7 +36,6 @@ namespace lidar_obstacle_detection
                          float centroid_y,
                          int id)
   {
-
     viewer_->addText3D(std::to_string(id), pcl::PointXYZ(centroid_x, centroid_y, 0), 0.3, 255, 255, 255, "", 0);
   }
 
@@ -73,7 +72,6 @@ namespace lidar_obstacle_detection
   {
     if (event.getKeySym() == "v" && event.keyUp())
     {
-
       setLidarStatus();
     }
   }
@@ -85,13 +83,11 @@ namespace lidar_obstacle_detection
 
   bool Renderer::getLidarStatus()
   {
-
     return lidarActivated;
   }
 
   void Renderer::RenderHighway()
   {
-
     // units in meters
     float roadLength = 50.0;
     float roadWidth = 12.0;
@@ -117,7 +113,6 @@ namespace lidar_obstacle_detection
   void Renderer::RenderRays(const Eigen::Vector3f &origin,
                             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
   {
-
     for (pcl::PointXYZ point : cloud->points)
     {
       viewer_->addLine(pcl::PointXYZ(origin.x(), origin.y(), origin.z()), point,
@@ -138,7 +133,6 @@ namespace lidar_obstacle_detection
                                   const std::string &name,
                                   Color color)
   {
-
     viewer_->addPointCloud<pcl::PointXYZ>(cloud, name);
     viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name);
     viewer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name);
@@ -148,7 +142,6 @@ namespace lidar_obstacle_detection
                                   const std::string &name,
                                   Color color)
   {
-
     if (color.r == -1)
     {
       // Select color based off of cloud intensity
@@ -229,7 +222,6 @@ namespace lidar_obstacle_detection
 
   void Renderer::InitCamera(CameraAngle view_angle)
   {
-
     viewer_->setBackgroundColor(0, 0, 0);
 
     // set camera position and angle
