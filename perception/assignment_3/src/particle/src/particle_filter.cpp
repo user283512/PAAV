@@ -17,7 +17,6 @@ void ParticleFilter::init_random(double std[],
 																 int map_y_min,
 																 int map_y_max)
 {
-	// Input control
 	if (nParticles <= 0)
 		throw std::invalid_argument("Number of particles must be greater than 0.");
 	if (std[0] < 0 || std[1] < 0 || std[2] < 0)
@@ -29,8 +28,8 @@ void ParticleFilter::init_random(double std[],
 	// want to explore the whole area uniformly.
 
 	// Create Uniform Distributions for x, y, and theta.
-	std::uniform_real_distribution<double> dist_x(map_x_min, map_x_max); // Range arbitrario
-	std::uniform_real_distribution<double> dist_y(map_y_min, map_y_max); // Range arbitrario
+	std::uniform_real_distribution<double> dist_x(map_x_min, map_x_max);
+	std::uniform_real_distribution<double> dist_y(map_y_min, map_y_max);
 	std::uniform_real_distribution<double> dist_theta(-M_PI, M_PI);
 
 	// Initialize all weights to 1.0
@@ -59,7 +58,6 @@ void ParticleFilter::init(double x,
 													double std[],
 													int nParticles)
 {
-	// Input control
 	if (nParticles <= 0)
 		throw std::invalid_argument("Number of particles must be greater than 0.");
 	if (std[0] < 0 || std[1] < 0 || std[2] < 0)
@@ -236,7 +234,6 @@ LandmarkObs ParticleFilter::transformation(const LandmarkObs &obs,
 	return LandmarkObs(obs.id, x_global, y_global);
 }
 
-// TODO: complete this function
 void ParticleFilter::resample()
 {
 	if (particles.empty())

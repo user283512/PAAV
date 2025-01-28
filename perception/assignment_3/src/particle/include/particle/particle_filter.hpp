@@ -7,20 +7,21 @@
 #include "Box.hpp"
 #include "helper_functions.hpp"
 
-// Each Particle represents a hypothesis about the system's (e.g., a vehicle's) state
-// in terms of position (x, y), orientation (theta), and its relative likelihood (weight).
-// Each particle represents a possible state, and the weights are updated during the process
-// to reflect the likelihood of each hypothesis.
+//  The Particle struct is used to represent a single particle in the particle filter algorithm.
+// Each particle is a hypothesis about the forklift's position and orientation in the warehouse.
 struct Particle
 {
-	int id;												 // Unique identifier for the particle.
-	double x;											 // Longitudinal position of the particle (along the direction of travel).
-	double y;											 // Lateral position of the particle (perpendicular to the direction of travel).
-	double theta;									 // Orientation of the particle (vehicle's heading angle in radians).
-	double weight;								 // Importance weight of the particle, representing its likelihood.
-	std::vector<int> associations; // Stores associations between observations and landmarks (e.g., map landmarks).
-	std::vector<double> sense_x;	 // Stores the x-coordinates of sensed landmarks in the world frame.
-	std::vector<double> sense_y;	 // Stores the y-coordinates of sensed landmarks in the world frame.
+	int id;				 // The particle ID
+	double x;			 // X-coordinate of the particle in the global coordinate system
+	double y;			 // Y-coordinate of the particle in the global coordinate system
+	double theta;	 // Orientation (angle) of the particle in radians
+	double weight; // Weight of the particle (probability that it represents the correct
+								 // location)
+
+	// Vectors to store associations and sensed positions
+	std::vector<int> associations; // Stores IDs of associated landmarks or features
+	std::vector<double> sense_x;	 // Stores sensed X-coordinates of landmarks or features
+	std::vector<double> sense_y;	 // Stores sensed Y-coordinates of landmarks or features
 
 	Particle(double x = 0,
 					 double y = 0,
@@ -37,14 +38,8 @@ struct Particle
 	}
 };
 
-// The ParticleFilter class implements the functionality of a particle filter, commonly used for localization.
-// It uses a set of particles to represent possible states and updates them based on
-// observations, motion models, and resampling.
-// The particle filter consists of three main phases:
-// 1. Initialization: Initial distribution of particles.
-// 2. Prediction: Updating the position of the particles based on odometry data.
-// 3. Weight Update: Updating the weights of the particles based on LiDAR observations.
-// 4. Resampling: Selecting the most probable particles.
+// The ParticleFilter class implements a particle filter algorithm to estimate
+// the position and orientation of a forklift in a warehouse using sensor data (LiDAR and odometry).
 class ParticleFilter
 {
 public:
@@ -57,10 +52,10 @@ public:
 	}
 	~ParticleFilter() = default;
 
-	// Initializes the particle filter by creating nParticles particles centered around a
-	// specified position (x, y, theta) with Gaussian noise.
+	// Initializes the particle filter by creating a set of particles centered around a 
+	// specified position (x, y, theta) with added Gaussian noise.
 	// Input:
-	// 	- x, y, theta: Initial position and orientation
+	// 	- x, y, theta: Initial position and orientation of the forklift.
 	//	- std[]: Array of standard deviations for noise in x, y, and theta.
 	// 	- nParticles: Number of particles to initialize.
 	void init(double x,
@@ -73,6 +68,8 @@ public:
 	// Input:
 	// 	- std[]: Array of standard deviations for noise in x, y, and theta.
 	// 	- nParticles: Number of particles to initialize.
+	// 	- map_x_min, map_x_max: Minimum and maximum x-coordinates of the map.
+	// 	- map_y_min, map_y_max: Minimum and maximum y-coordinates of the map.
 	void init_random(double std[],
 									 int nParticles,
 									 int map_x_min,
@@ -80,13 +77,18 @@ public:
 									 int map_y_min,
 									 int map_y_max);
 
+	// Transforms an observation from the vehicle's local coordinate frame to the global map frame.
+	// Input:
+	// 	- obs: Observation in the vehicle's local frame.
+	// 	- particle: Particle representing the vehicle's state.
+	// Returns: Transformed observation in the global map frame.
 	LandmarkObs transformation(const LandmarkObs &obs,
 														 const Particle &particle);
 
 	// Predicts the next state of each particle based on the motion model of the vehicle.
 	// Input:
 	//	- delta_t: Time elapsed between the current and the next prediction, in seconds.
-	//	- std_pos[]: Array of standard deviations [x,y,theta]
+	//	- std_pos[]: Array of standard deviations [x, y, theta] for process noise.
 	//  - velocity: Vehicle velocity, in meters per second.
 	//	- yaw_rate: Vehicle yaw rate, in radians per second.
 	void prediction(double delta_t,
@@ -98,7 +100,8 @@ public:
 	// matching the predicted landmarks.
 	// Transforms observations from the vehicle's local frame to the global map frame.
 	// Associates transformed observations with map landmarks using the dataAssociation method.
-	// Computes the likelihood of each particle using a multivariate Gaussian distribution and updates its weight.
+	// Computes the likelihood of each particle using a multivariate Gaussian distribution and updates 
+	// its weight.
 	// Normalizes the weights to ensure they sum to 1.
 	// Input:
 	//	- std_landmark[]: Array of standard deviations [range, bearing] for sensor measurements.
@@ -113,8 +116,8 @@ public:
 	// For each observation, finds the closest predicted landmark and associates it.
 	// Updates each observation with the ID of the closest predicted landmark.
 	// Input:
-	// 	- map_landmarks: Vector of predicted landmark positions
-	//	-	observations: Vector of observed landmark positions (from sensors)
+	// 	- map_landmarks: Vector of predicted landmark positions.
+	//	- transformed_observations: Vector of observed landmark positions (transformed to the global frame).
 	void dataAssociation(const std::vector<LandmarkObs> &map_landmarks,
 											 std::vector<LandmarkObs> &transformed_observations);
 
@@ -126,9 +129,9 @@ public:
 	// Sets associations for a particle, linking observations with map landmarks.
 	// Updates the particle's associations, sense_x, and sense_y fields with the provided data.
 	// Input:
-	//	-	particle: The particle to update.
-	//	-	associations: List of landmark IDs associated with the particle.
-	//	-	sense_x, sense_y: Global coordinates of the associated observations.
+	//	- particle: The particle to update.
+	//	- associations: List of landmark IDs associated with the particle.
+	//	- sense_x, sense_y: Global coordinates of the associated observations.
 	// Particle SetAssociations(const Particle &particle,
 	// 												 const std::vector<int> &associations,
 	// 												 const std::vector<double> &sense_x,
@@ -139,9 +142,11 @@ public:
 	// std::string getSenseY(const Particle &best);
 
 	// Checks whether the particle filter has been initialized.
+	// Returns: True if the particle filter is initialized, false otherwise.
 	bool initialized() const { return is_initialized; }
 
-	std::vector<Particle> particles; // Vector containing all the particles in the filter.
+	// Vector containing all the particles in the filter.
+	std::vector<Particle> particles;
 
 private:
 	int num_particles;					 // Number of particles used in the filter.
