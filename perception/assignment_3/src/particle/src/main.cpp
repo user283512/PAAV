@@ -247,18 +247,15 @@ int main(int argc, char **argv)
 	renderer.RenderPointCloud(cloud_filtered_map, "originalCloud", Color(0, 0, 1));
 	renderer.RenderPointCloud(cloudReflectors, "reflectorCloud", Color(1, 0, 0));
 
-	Box box;
-	box.x_min = g_box_x_min;
-	box.x_max = g_box_x_max;
-	box.y_min = g_box_y_min;
-	box.y_max = g_box_y_max;
-	box.z_min = 0;
-	box.z_max = 0;
-	renderer.RenderBox(box, 1000, Color(1, 0, 0));
-
 	// Add the reflectors detected by the particles (you can ignore this)
 	for (int i = 0; i < g_num_reflectors; i++)
 		renderer.addCircle(0, 0, "reflector_id" + std::to_string(i), 0.2, 1, 1, 1);
+
+	// map coordinates
+	constexpr int map_x_min = -12;
+	constexpr int map_x_max = 12;
+	constexpr int map_y_min = -27;
+	constexpr int map_y_max = 35;
 
 	// Initial position of the forklift
 	static constexpr double GPS_x = 2.37256;
@@ -270,8 +267,11 @@ int main(int argc, char **argv)
 	best_particles.push_back(p);
 
 	// Init the particle filter
-	pf.init(GPS_x, GPS_y, GPS_theta, g_sigma_init, g_num_particles);
-	// pf.init_random(sigma_init, g_num_particles);
+	// pf.init(GPS_x, GPS_y, GPS_theta, g_sigma_init, g_num_particles);
+	pf.init_random(sigma_init, g_num_particles, map_x_min, map_x_max, map_y_min, map_y_max);
+
+	assert(pf.initialized());
+	std::cout << "Particle filter initialized with " << pf.particles.size() << " particles." << std::endl;
 
 	// Render all the particles
 	for (int i = 0; i < g_num_particles; i++)
