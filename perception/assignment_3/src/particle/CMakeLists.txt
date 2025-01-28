@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(particle)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-#add_compile_options(-std=c++11)
+## Compile as C++17, supported in ROS Kinetic and newer
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -14,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
-find_package(PCL 1.14 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 find_package(Ceres REQUIRED)
 
 
