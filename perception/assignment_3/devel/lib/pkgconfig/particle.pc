@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 prefix=/home/PAAV/perception/assignment_3/devel
+=======
+prefix=/home/simone/Desktop/PAAV/perception/assignment_3/devel
+>>>>>>> 8456d541ac3f9881ed8d31fdab3f931a2c14e038
 
 Name: particle
 Description: Description of particle
 Version: 0.0.0
+<<<<<<< HEAD
 Cflags: -I/home/PAAV/perception/assignment_3/src/particle/include
+=======
+Cflags: -I/home/simone/Desktop/PAAV/perception/assignment_3/src/particle/include
+>>>>>>> 8456d541ac3f9881ed8d31fdab3f931a2c14e038
 Libs: -L${prefix}/lib 
 Requires: nav_msgs roscpp

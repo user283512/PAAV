@@ -5,8 +5,6 @@
 
 using my_visited_set_t = std::unordered_set<int>;
 
-
-
 // TODO (optional)
 // This function builds the clusters following a euclidean clustering approach
 // 	- Input:

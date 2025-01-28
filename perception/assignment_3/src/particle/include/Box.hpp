@@ -1,4 +1,7 @@
-#include <Eigen/Geometry> 
+#ifndef BOX_HPP_
+#define BOX_HPP_
+
+#include <Eigen/Geometry>
 
 namespace lidar_obstacle_detection
 {
@@ -13,7 +16,12 @@ namespace lidar_obstacle_detection
 
   struct Box
   {
-    Eigen::Vector3f pos_min;
-    Eigen::Vector3f pos_max;
+    float x_min;
+    float y_min;
+    float z_min;
+    float x_max;
+    float y_max;
+    float z_max;
   };
 }
+#endif
